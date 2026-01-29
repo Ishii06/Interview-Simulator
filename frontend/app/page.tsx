@@ -35,29 +35,13 @@ export default function LandingPage() {
       {/* GSAP Glow Follower - Switched to a more subtle Zinc/Indigo mix */}
       <div 
         ref={glowRef}
-        className="pointer-events-none fixed top-0 left-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[140px] rounded-full z-0"
+        className="pointer-events-none fixed top-0 left-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[120px] rounded-full z-0"
       />
 
       {/* Navigation */}
-      <motion.nav 
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 backdrop-blur-xl border-b border-zinc-800/50 bg-[#09090b]/50"
-      >
-        <div className="flex justify-between items-center p-4 max-w-7xl mx-auto px-8">
-          <div className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-            <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center shadow-lg">
-              <Cpu size={18} className="text-zinc-950" />
-            </div>
-            <span className="text-zinc-100 tracking-tighter text-xl">INTERVIEW.AI</span>
-          </div>
-          <Link href="/login" className="px-5 py-2 rounded-full border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-sm font-medium transition-all duration-300">
-            Sign In
-          </Link>
-        </div>
-      </motion.nav>
 
-      <main className="max-w-7xl mx-auto px-8 pt-20 pb-32 relative z-10">
+
+      <main className="mt-16 max-w-7xl mx-auto px-8 pt-20 pb-32 relative z-10">
         <motion.div initial="initial" animate="animate" transition={{ staggerChildren: 0.15 }} className="text-center space-y-8">
           
           <motion.h1 variants={fadeInUp} className="text-6xl md:text-8xl font-bold tracking-tight leading-[1.05] text-zinc-100">
@@ -84,7 +68,7 @@ export default function LandingPage() {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           transition={{ delay: 0.6, duration: 1 }}
-          className="w-full mt-28 overflow-hidden relative pointer-events-none"
+          className="w-full mt-12 lg:mt-28 overflow-hidden relative pointer-events-none"
         >
           {/* Side masks for seamless look */}
           <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#09090b] to-transparent z-10" />

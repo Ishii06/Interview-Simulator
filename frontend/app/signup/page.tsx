@@ -9,10 +9,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center items-center p-6 relative">
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full z-0" />
 
-      <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-zinc-500 hover:text-zinc-100 transition-colors text-sm font-medium z-10">
-        <ChevronLeft size={16} /> Home
-      </Link>
-
+      
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}

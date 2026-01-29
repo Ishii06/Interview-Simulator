@@ -9,19 +9,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center items-center p-6 relative">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full z-0" />
 
-      <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-zinc-500 hover:text-zinc-100 transition-colors text-sm font-medium z-10">
-        <ChevronLeft size={16} /> Home
-      </Link>
+      
 
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-[400px] z-10"
       >
-        <div className="flex flex-col items-center mb-10 text-center">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-            <Cpu size={24} className="text-zinc-950" />
-          </div>
+        <div className="mt-16 flex flex-col items-center mb-10 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
           <p className="text-zinc-500 text-sm mt-2 font-medium">Log in to your AI interview dashboard</p>
         </div>
