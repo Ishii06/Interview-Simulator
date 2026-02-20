@@ -17,13 +17,13 @@ app = FastAPI()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-VOICE_PATH = "voices/en_US-ryan-medium.onnx"
+VOICE_PATH = "voices/en_GB-northern_english_male-medium.onnx"
 voice = PiperVoice.load(VOICE_PATH)   # load once at startup
 syn_config = SynthesisConfig(
-    volume=1.0,
-    length_scale=1.5,   # 🔥 slower
-    noise_scale=0.7,
-    noise_w_scale=0.8,
+    volume=1.1,
+    length_scale=1.2,   # 🔥 slower
+    noise_scale=0.4,
+    noise_w_scale=0.4,
     normalize_audio=True,
 )
 
