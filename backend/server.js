@@ -6,13 +6,18 @@ import interviewRoutes from "./routes/interviewRoutes.js";
 import testRoutes from './routes/testRoutes.js'
 import questionRoutes from './routes/questionRoutes.js'
 import resultRoutes from './routes/resultRoutes.js'
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000", // frontend URL
+  credentials: true // 🔥 VERY IMPORTANT
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/interview", interviewRoutes);

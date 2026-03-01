@@ -57,6 +57,13 @@ export default function LandingPage() {
             <Link href="/login" className="group px-8 py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all">
               Start Free Session <ChevronRight size={18} />
             </Link>
+            <Link 
+  href="/practice"
+  className="px-8 py-3.5 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 
+  text-indigo-300 rounded-xl font-bold text-base transition-all"
+>
+  Practice Tests
+</Link>
             <button className="px-8 py-3.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl font-bold text-base transition-all text-zinc-300">
               Request Demo
             </button>
