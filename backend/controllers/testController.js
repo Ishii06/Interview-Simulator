@@ -1,86 +1,62 @@
-import { supabase } from '../config/supabaseClient.js'
-import { generateQuestions } from '../services/pythonService.js'
+import axios from "axios"
+import { supabase } from "../config/supabaseClient.js"
 
-export const getTestById = async (req, res) => {
-  try {
-    const { id } = req.params
-
-    const { data: test, error: testError } = await supabase
-      .from('tests')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (testError || !test) {
-      return res.status(404).json({ error: "Test not found" })
-    }
-
-    const { data: questions, error: questionError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('test_id', id)
-
-    if (questionError) throw questionError
-
-    res.json({
-      start_time: test.start_time,
-      duration: test.duration,
-      questions
-    })
-
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-}
 export const createTest = async (req, res) => {
   try {
-    const { user_id, type, role, difficulty } = req.body
+    const { user_id, role, experience, difficulty } = req.body
 
-    const duration = type === "aptitude" ? 60 : 45
+    // 🔥 Call Python
+    const response = await axios.post(
+      "http://localhost:8000/generate-mock-test",
+      { role, experience, difficulty }
+    )
 
-    // 1️⃣ Create test first
+    const questions = response.data.questions
+
+    // 🔥 Always use UTC ISO strings
+    const startTime = new Date()
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000)
+
+    const startISO = startTime.toISOString()
+    const endISO = endTime.toISOString()
+
+    // 🔥 Insert Test
     const { data: testData, error: testError } = await supabase
-      .from('tests')
+      .from("tests")
       .insert([{
         user_id,
-        type,
         role,
+        experience,
         difficulty,
-        duration,
-        start_time: new Date()
+        start_time: startISO,
+        end_time: endISO,
+        is_submitted: false
       }])
       .select()
       .single()
 
     if (testError) throw testError
 
-    // 2️⃣ Call Python to generate questions
-    const questions = await generateQuestions({
-      type,
-      difficulty,
-      role
-    })
+    // 🔥 Attach test_id to questions
+    // 🔥 Attach test_id to questions
+const formattedQuestions = questions.map(q => ({
+  ...q,
+  test_id: testData.id
+}))
 
-    // 3️⃣ Attach test_id to questions
-    const formattedQuestions = questions.map(q => ({
-      ...q,
-      test_id: testData.id
-    }))
+const { error: questionError } = await supabase
+  .from("questions")
+  .insert(formattedQuestions)
 
-    // 4️⃣ Insert into Supabase
-    const { error: questionError } = await supabase
-      .from('questions')
-      .insert(formattedQuestions)
-
-    if (questionError) throw questionError
-
+if (questionError) {
+  throw questionError
+}
     res.json({
-      message: "Test created successfully",
-      test_id: testData.id
+      test_id: testData.id,
+      end_time: endISO
     })
 
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
 }
-

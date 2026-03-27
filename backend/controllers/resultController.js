@@ -1,83 +1,75 @@
-import { supabase } from '../config/supabaseClient.js'
+import { supabase } from "../config/supabaseClient.js"
 
 export const submitTest = async (req, res) => {
   try {
     const { test_id, user_id, answers } = req.body
 
-    // 1️⃣ Fetch test
     const { data: test, error: testError } = await supabase
-      .from('tests')
-      .select('*')
-      .eq('id', test_id)
-      .single()
+      .from("tests")
+      .select("*")
+      .eq("id", test_id)
+      .eq("user_id", user_id)
+      .maybeSingle()
 
-    if (testError || !test) {
+    if (testError) {
+      return res.status(500).json({ error: testError.message })
+    }
+
+    if (!test) {
       return res.status(404).json({ message: "Test not found" })
     }
 
     if (test.is_submitted) {
-      return res.status(400).json({ message: "Test already submitted" })
+      return res.status(400).json({ message: "Already submitted" })
     }
 
-    // 2️⃣ Check time limit
-    const now = new Date()
-    const startTime = new Date(test.start_time)
+    const now = Date.now()
+    const endTime = new Date(test.end_time).getTime()
+    const isExpired = now > endTime
 
-    const timeElapsedMinutes =
-      (now - startTime) / (1000 * 60)
+    const { data: questions, error: qError } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("test_id", test_id)
 
-    const isExpired = timeElapsedMinutes > test.duration
+    if (qError) {
+      return res.status(500).json({ error: qError.message })
+    }
 
-    // 3️⃣ Fetch questions
-    const { data: questions, error: questionError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('test_id', test_id)
-
-    if (questionError) throw questionError
-
-    // 4️⃣ Calculate score
     let score = 0
 
     questions.forEach(q => {
-      if (answers && answers[q.id] === q.correct_answer) {
+      if (answers?.[q.id] === q.correct_answer) {
         score++
       }
     })
 
-    // 5️⃣ Save result
-    const { error: resultError } = await supabase
-      .from('results')
-      .insert([{
-        test_id,
-        user_id,
-        score,
-        total: questions.length
-      }])
+    const total = questions.length
+    const percentage = total > 0 ? (score / total) * 100 : 0
 
-    if (resultError) throw resultError
+    await supabase.from("results").insert([{
+      test_id,
+      user_id,
+      score,
+      total,
+      percentage
+    }])
 
-    // 6️⃣ Mark test submitted
-    const { error: updateError } = await supabase
-      .from('tests')
-      .update({
-        is_submitted: true,
-        end_time: new Date()
-      })
-      .eq('id', test_id)
-
-    if (updateError) throw updateError
+    await supabase
+      .from("tests")
+      .update({ is_submitted: true })
+      .eq("id", test_id)
 
     res.json({
       message: isExpired
-        ? "Time expired. Test auto-submitted."
-        : "Test submitted successfully",
+        ? "Time expired. Auto submitted."
+        : "Submitted successfully",
       score,
-      total: questions.length
+      total,
+      percentage
     })
 
   } catch (error) {
-    console.error("Submit error:", error)
     res.status(500).json({ error: error.message })
   }
 }

@@ -3,7 +3,7 @@ import axios from 'axios'
 export const generateQuestions = async (payload) => {
   try {
     const response = await axios.post(
-      'http://localhost:8000/generate',
+      'http://localhost:8000/generate-mock-test',
       payload
     )
 
