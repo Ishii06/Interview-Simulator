@@ -20,3 +20,21 @@ export const addQuestions = async (req, res) => {
 
   res.json({ message: "Questions added" })
 }
+
+export const getQuestionsByTestId = async (req, res) => {
+  try {
+    const { test_id } = req.params
+
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('test_id', test_id)
+      .order('id', { ascending: true })
+
+    if (error) return res.status(400).json({ error: error.message })
+
+    res.json(data)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}

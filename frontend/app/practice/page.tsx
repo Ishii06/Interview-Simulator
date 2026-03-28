@@ -8,16 +8,16 @@ export default function PracticePage() {
   const router = useRouter()
   const { createTest } = useTestStore()
 
-  const startTest = async (type) => {
-    const testId = await createTest({
+  const startTest = async (type: "aptitude" | "coding") => {
+    const data = await createTest({
       user_id: "11111111-1111-1111-1111-111111111111", // replace later
-      type,
       role: "software engineer",
+      experience: "fresher",
       difficulty: "medium"
     })
 
-    if (testId) {
-      router.push(`/practice/${type}/${testId}`)
+    if (data?.test_id) {
+      router.push(`/practice/${type}`)
     }
   }
 
@@ -37,7 +37,7 @@ export default function PracticePage() {
           {/* Aptitude */}
           <motion.div
             whileHover={{ y: -6 }}
-            className="p-10 rounded-[2rem] border border-zinc-800 bg-zinc-900/40"
+            className="p-10 rounded-4xl border border-zinc-800 bg-zinc-900/40"
           >
             <Brain size={40} className="text-indigo-400 mb-6" />
             <h2 className="text-2xl font-bold mb-3">Aptitude Test</h2>
@@ -57,7 +57,7 @@ export default function PracticePage() {
           {/* Coding */}
           <motion.div
             whileHover={{ y: -6 }}
-            className="p-10 rounded-[2rem] border border-zinc-800 bg-zinc-900/40"
+            className="p-10 rounded-4xl border border-zinc-800 bg-zinc-900/40"
           >
             <Code2 size={40} className="text-emerald-400 mb-6" />
             <h2 className="text-2xl font-bold mb-3">Coding Test</h2>

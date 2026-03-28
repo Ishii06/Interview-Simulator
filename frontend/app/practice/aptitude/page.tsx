@@ -1,27 +1,33 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useTestStore } from "../store/testStore"
+import { useRouter } from "next/navigation"
+import { useTestStore } from "../../store/testStore"
+
+type TestQuestion = {
+  id: string
+  question: string
+  options: string[]
+}
 
 export default function AptitudeTestPage() {
-  const { id } = useParams()
   const router = useRouter()
-  const { fetchTest, questions, duration, startTime, submitTest } = useTestStore()
+  const { testId, endTime, questions, fetchQuestions, submitTest, loading, error } = useTestStore()
 
-  const [answers, setAnswers] = useState({})
+  const [answers, setAnswers] = useState<Record<string, string>>({})
   const [timeLeft, setTimeLeft] = useState(0)
 
   useEffect(() => {
-    fetchTest(id)
-  }, [id])
+    if (testId) {
+      fetchQuestions()
+    }
+  }, [testId, fetchQuestions])
 
   useEffect(() => {
-    if (startTime && duration) {
-      const start = new Date(startTime)
-      const end = new Date(start.getTime() + duration * 60000)
+    if (endTime) {
+      const end = new Date(endTime)
 
       const interval = setInterval(() => {
-        const remaining = Math.floor((end - new Date()) / 1000)
+        const remaining = Math.floor((end.getTime() - Date.now()) / 1000)
         setTimeLeft(remaining > 0 ? remaining : 0)
 
         if (remaining <= 0) {
@@ -32,14 +38,24 @@ export default function AptitudeTestPage() {
 
       return () => clearInterval(interval)
     }
-  }, [startTime])
+  }, [endTime])
 
   const handleSubmit = async () => {
-    const result = await submitTest(
-      answers,
-      "11111111-1111-1111-1111-111111111111"
+    const result = await submitTest(answers)
+    if (result) {
+      router.push("/practice")
+    }
+  }
+
+  if (!testId) {
+    return (
+      <div className="min-h-screen bg-black text-white p-10">
+        <h1 className="text-2xl font-bold mb-4">No active aptitude test</h1>
+        <button onClick={() => router.push("/practice")} className="px-6 py-3 bg-indigo-600 rounded-xl">
+          Back to Practice
+        </button>
+      </div>
     )
-    router.push("/practice/result")
   }
 
   return (
@@ -52,13 +68,16 @@ export default function AptitudeTestPage() {
         </div>
       </div>
 
-      {questions.map((q, i) => (
+      {loading && <p className="mb-6 text-zinc-300">Loading questions...</p>}
+      {error && <p className="mb-6 text-red-400">{error}</p>}
+
+      {(questions as TestQuestion[]).map((q, i) => (
         <div key={q.id} className="mb-8 p-6 bg-zinc-900 rounded-xl">
           <p className="mb-4 font-semibold">
             {i + 1}. {q.question}
           </p>
 
-          {q.options.map((opt, idx) => (
+          {q.options.map((opt: string, idx: number) => (
             <label key={idx} className="block mb-2">
               <input
                 type="radio"

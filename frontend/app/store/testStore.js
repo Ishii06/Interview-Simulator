@@ -27,7 +27,7 @@ export const useTestStore = create((set, get) => ({
     set({ loading: true, error: null })
 
     try {
-      const res = await fetch(`${API_BASE}/create`, {
+      const res = await fetch(`${API_BASE}/api/tests/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -40,6 +40,7 @@ export const useTestStore = create((set, get) => ({
       }
 
       set({
+        userId: payload?.user_id ?? null,
         testId: data.test_id,
         endTime: data.end_time,
         loading: false,
@@ -47,7 +48,8 @@ export const useTestStore = create((set, get) => ({
 
       return data
     } catch (err) {
-      set({ error: err.message, loading: false })
+      set({ error: err?.message || "Failed to create test", loading: false })
+      return null
     }
   },
 
@@ -60,15 +62,19 @@ export const useTestStore = create((set, get) => ({
     set({ loading: true })
 
     try {
-      const res = await fetch(`${API_BASE}/questions/${testId}`)
+      const res = await fetch(`${API_BASE}/api/questions/${testId}`)
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch questions")
+      }
 
       set({
         questions: data,
         loading: false,
       })
     } catch (err) {
-      set({ error: err.message, loading: false })
+      set({ error: err?.message || "Failed to fetch questions", loading: false })
     }
   },
 
@@ -76,10 +82,18 @@ export const useTestStore = create((set, get) => ({
   submitTest: async (answers) => {
     const { testId, userId } = get()
 
+    if (!testId || !userId) {
+      set({
+        error: "Missing test or user context. Please start a new test.",
+        loading: false,
+      })
+      return null
+    }
+
     set({ loading: true })
 
     try {
-      const res = await fetch(`${API_BASE}/submit`, {
+      const res = await fetch(`${API_BASE}/api/results/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -92,7 +106,7 @@ export const useTestStore = create((set, get) => ({
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.message || "Submit failed")
+        throw new Error(data.error || data.message || "Submit failed")
       }
 
       set({
@@ -102,7 +116,8 @@ export const useTestStore = create((set, get) => ({
 
       return data
     } catch (err) {
-      set({ error: err.message, loading: false })
+      set({ error: err?.message || "Failed to submit test", loading: false })
+      return null
     }
   },
 
