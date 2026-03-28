@@ -43,6 +43,15 @@ class MockTestRequest(BaseModel):
     experience: str
     difficulty: str
 
+
+class AnswerExplanationRequest(BaseModel):
+    question: str
+    options: List[str]
+    correct_answer: str
+    selected_answer: Optional[str] = None
+    section: Optional[str] = None
+    is_correct: Optional[bool] = None
+
 def build_mock_test_prompt(role: str, experience: str, difficulty: str):
     return f"""
 You are an aptitude test creator.
@@ -85,6 +94,37 @@ For each question:
 - Then generate 4 options including the correct one.
 - Ensure correct_answer exactly matches one option.
 - Double check logic before returning JSON.
+"""
+
+
+def build_answer_explanation_prompt(question: str, options: List[str], correct_answer: str, selected_answer: Optional[str], section: Optional[str], is_correct: Optional[bool]):
+    selected_text = selected_answer or "Not answered"
+    correctness_text = "correct" if is_correct else "incorrect"
+
+    return f"""
+You are an expert tutor explaining a multiple-choice question to a student.
+
+Explain the answer in plain, easy-to-understand language.
+Make the explanation specific to this exact question. Do not reuse generic wording.
+Vary the phrasing naturally across questions.
+
+Section: {section or "General"}
+Question: {question}
+Options: {json.dumps(options)}
+Student answer: {selected_text}
+Correct answer: {correct_answer}
+Result: {correctness_text}
+
+Rules:
+- Write 4 to 6 short sentences.
+- Explain the reasoning using the details from this question, not a generic template.
+- If the student answer is wrong, explain the mistake clearly and simply.
+- If the student answer is correct, reinforce the reasoning and briefly mention why the other options do not fit.
+- Do not use markdown or bullet points.
+- Do not mention that you are an AI.
+- Keep the explanation focused and beginner-friendly.
+
+Return only the explanation text.
 """
 
 #tejapeja
@@ -320,6 +360,34 @@ def generate_mock_test(data: MockTestRequest):
         }
 
     return {"questions": questions}
+
+
+@app.post("/generate-answer-explanation")
+def generate_answer_explanation(data: AnswerExplanationRequest):
+    prompt = build_answer_explanation_prompt(
+        data.question,
+        data.options,
+        data.correct_answer,
+        data.selected_answer,
+        data.section,
+        data.is_correct,
+    )
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        explanation = (response.text or "").strip()
+        if not explanation:
+            return {
+                "explanation": f"The correct answer for this question is {data.correct_answer}. Review the wording of the question and compare it with each option to see why it fits best."
+            }
+
+        return {"explanation": explanation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 def home():

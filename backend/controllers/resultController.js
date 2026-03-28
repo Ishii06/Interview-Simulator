@@ -1,4 +1,5 @@
 import { supabase } from "../config/supabaseClient.js"
+import { generateAnswerExplanation } from "../services/pythonService.js"
 
 const toReliableMillis = (value) => {
   if (!value) return NaN
@@ -18,28 +19,28 @@ const toReliableMillis = (value) => {
   }
 
   const asLocal = Date.parse(normalized)
-  const asUtc = Date.parse(`${normalized}Z`)
-
-  if (Number.isFinite(asLocal) && Number.isFinite(asUtc)) {
-    // Choose the later interpretation to avoid false "expired" due to timezone ambiguity.
-    return Math.max(asLocal, asUtc)
-  }
-
-  return Number.isFinite(asLocal) ? asLocal : asUtc
-}
-
-const normalizeAnswers = (answers) => {
-  const normalized = {
-    byId: {},
-    byQuestion: {},
-    byIndex: {}
-  }
-
-  if (!answers) return normalized
-
-  if (Array.isArray(answers)) {
-    answers.forEach((item, idx) => {
       const key = item?.question_id ?? item?.questionId ?? item?.id
+
+const generateReviewExplanation = async (question, submitted, isCorrect) => {
+  try {
+    const explanation = await generateAnswerExplanation({
+      question: question.question,
+      options: Array.isArray(question.options) ? question.options : [],
+      correct_answer: question.correct_answer,
+      selected_answer: submitted ?? null,
+      section: question.section ?? null,
+      is_correct: isCorrect,
+    })
+
+    if (explanation && String(explanation).trim()) {
+      return String(explanation).trim()
+    }
+  } catch {
+    // Fall through to the deterministic fallback below.
+  }
+
+  return buildFallbackExplanation(question)
+}
       const questionText = item?.question ?? item?.question_text
       const value = item?.answer ?? item?.selected_option ?? item?.selectedAnswer
 
@@ -78,10 +79,33 @@ const buildFallbackExplanation = (question) => {
 
   const answer = String(question?.correct_answer ?? "").trim()
   if (!answer) {
-    return "This answer is marked correct based on the test answer key."
+    return `This question is marked correct based on the test answer key for ${question?.section ?? "this section"}.`
   }
 
-  return `The correct option is \"${answer}\" because it best matches the expected concept for this question.`
+  const questionText = String(question?.question ?? "this question").trim()
+
+  return `For ${questionText}, the correct option is \"${answer}\" because it matches the wording and the logic required by the question. Compare each option against the key detail in the question to see why the others do not fit as well.`
+}
+
+const generateReviewExplanation = async (question, submitted, isCorrect) => {
+  try {
+    const explanation = await generateAnswerExplanation({
+      question: question.question,
+      options: Array.isArray(question.options) ? question.options : [],
+      correct_answer: question.correct_answer,
+      selected_answer: submitted ?? null,
+      section: question.section ?? null,
+      is_correct: isCorrect,
+    })
+
+    if (explanation && String(explanation).trim()) {
+      return String(explanation).trim()
+    }
+  } catch {
+    // Fall through to the deterministic fallback below.
+  }
+
+  return buildFallbackExplanation(question)
 }
 
 export const submitTest = async (req, res) => {
@@ -139,23 +163,19 @@ export const submitTest = async (req, res) => {
       return res.status(500).json({ error: qError.message })
     }
 
-    let score = 0
     const submittedAnswers = normalizeAnswers(answers)
     const debugDetails = []
-    const review = []
 
-    questions.forEach((q, idx) => {
+    const review = await Promise.all(questions.map(async (q, idx) => {
       const submitted = submittedAnswers.byId[String(q.id)]
         ?? submittedAnswers.byQuestion[normalizeText(q.question)]
         ?? submittedAnswers.byIndex[String(idx)]
 
       const isCorrect = normalizeText(submitted) === normalizeText(q.correct_answer)
 
-      if (isCorrect) {
-        score++
-      }
+      const explanation = await generateReviewExplanation(q, submitted, isCorrect)
 
-      review.push({
+      const item = {
         question_id: q.id,
         section: q.section ?? null,
         question: q.question,
@@ -163,20 +183,20 @@ export const submitTest = async (req, res) => {
         selected_answer: submitted ?? null,
         correct_answer: q.correct_answer,
         is_correct: isCorrect,
-        explanation: buildFallbackExplanation(q)
-      })
-
-      if (debug) {
-        debugDetails.push({
-          question_id: q.id,
-          submitted,
-          correct_answer: q.correct_answer,
-          is_correct: isCorrect
-        })
+        explanation
       }
 
-      
-    })
+      debugDetails.push({
+        question_id: q.id,
+        submitted,
+        correct_answer: q.correct_answer,
+        is_correct: isCorrect
+      })
+
+      return item
+    }))
+
+    const score = review.filter((item) => item.is_correct).length
 
     const total = questions.length
     const percentage = total > 0 ? (score / total) * 100 : 0
