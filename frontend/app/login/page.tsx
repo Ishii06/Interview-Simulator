@@ -1,20 +1,47 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, Github, Mail, Lock, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Github, Mail, Lock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../store/authStore';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login, loading } = useAuthStore();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    if (!email || !password) {
+      setError('Email and password are required.');
+      return;
+    }
+
+    try {
+      await login(email, password);
+      router.push('/');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center items-center p-6 relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full z-0" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-indigo-500/5 blur-[120px] rounded-full z-0" />
 
       
 
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[400px] z-10"
+        className="w-full max-w-100 z-10"
       >
         <div className="mt-16 flex flex-col items-center mb-10 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
@@ -22,7 +49,7 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl">
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
@@ -30,6 +57,8 @@ export default function LoginPage() {
                 <input 
                   type="email" 
                   placeholder="name@email.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-700" 
                 />
               </div>
@@ -45,13 +74,25 @@ export default function LoginPage() {
                 <input 
                   type="password" 
                   placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-700" 
                 />
               </div>
             </div>
 
-            <button className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-white/5 group">
-              Sign In <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            {error && (
+              <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-white/5 group disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign In'} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 

@@ -71,14 +71,34 @@ const normalizeAnswers = (answers) => {
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase()
 
+const buildFallbackExplanation = (question) => {
+  if (question?.explanation && String(question.explanation).trim()) {
+    return String(question.explanation).trim()
+  }
+
+  const answer = String(question?.correct_answer ?? "").trim()
+  if (!answer) {
+    return "This answer is marked correct based on the test answer key."
+  }
+
+  return `The correct option is \"${answer}\" because it best matches the expected concept for this question.`
+}
+
 export const submitTest = async (req, res) => {
   try {
-    const { test_id, user_id, answers } = req.body
+    const { test_id, answers } = req.body
+    const user_id = req.user?.id
     const debug = req.query?.debug === "true"
 
-    if (!test_id || !user_id) {
+    if (!user_id) {
+      return res.status(401).json({
+        error: "Not authenticated",
+      })
+    }
+
+    if (!test_id) {
       return res.status(400).json({
-        error: "test_id and user_id are required",
+        error: "test_id is required",
       })
     }
 
@@ -122,6 +142,7 @@ export const submitTest = async (req, res) => {
     let score = 0
     const submittedAnswers = normalizeAnswers(answers)
     const debugDetails = []
+    const review = []
 
     questions.forEach((q, idx) => {
       const submitted = submittedAnswers.byId[String(q.id)]
@@ -133,6 +154,17 @@ export const submitTest = async (req, res) => {
       if (isCorrect) {
         score++
       }
+
+      review.push({
+        question_id: q.id,
+        section: q.section ?? null,
+        question: q.question,
+        options: Array.isArray(q.options) ? q.options : [],
+        selected_answer: submitted ?? null,
+        correct_answer: q.correct_answer,
+        is_correct: isCorrect,
+        explanation: buildFallbackExplanation(q)
+      })
 
       if (debug) {
         debugDetails.push({
@@ -176,7 +208,8 @@ export const submitTest = async (req, res) => {
         : "Submitted successfully",
       score,
       total,
-      percentage
+      percentage,
+      review
     }
 
     if (debug) {

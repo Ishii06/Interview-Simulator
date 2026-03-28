@@ -276,6 +276,7 @@ export const evaluateInterview = async (req, res) => {
       return res.status(500).json({ error: messageError.message });
     }
 
+    console.log("Interview messages:", messages);
     const conversation = (messages || []).map((item) => ({
       role: item.role,
       content: item.content,
@@ -286,7 +287,7 @@ export const evaluateInterview = async (req, res) => {
         error: "No interview conversation found to evaluate",
       });
     }
-
+    console.log("Evaluating interview with conversation:", conversation);
     const evaluation = await evaluateInterviewFromAI({
       role: interview.role || "Python Developer",
       experience: interview.level || "beginner",

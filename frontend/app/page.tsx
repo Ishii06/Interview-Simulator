@@ -4,11 +4,19 @@ import { Mic, Cpu, BarChart3, ChevronRight, Sparkles, ShieldCheck, Zap } from 'l
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
+import { useAuthStore } from './store/authStore';
 
 const COMPANIES = ["Google", "Meta", "Amazon", "Netflix", "OpenAI", "Microsoft", "Stripe", "Airbnb"];
 
 export default function LandingPage() {
   const glowRef = useRef<HTMLDivElement>(null);
+  const { user, initialized, fetchCurrentUser } = useAuthStore();
+
+  useEffect(() => {
+    if (!initialized) {
+      fetchCurrentUser();
+    }
+  }, [initialized, fetchCurrentUser]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -29,6 +37,9 @@ export default function LandingPage() {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] } // Custom cubic-bezier for "Apple-like" feel
   };
+
+  const primaryCtaHref = user ? '/interview' : '/login';
+  const primaryCtaLabel = user ? 'Start your first interview' : 'Start Free Session';
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-indigo-500/30 overflow-hidden relative font-sans">
@@ -54,8 +65,8 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Link href="/login" className="group px-8 py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all">
-              Start Free Session <ChevronRight size={18} />
+            <Link href={primaryCtaHref} className="group px-8 py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all">
+              {primaryCtaLabel} <ChevronRight size={18} />
             </Link>
             <Link 
   href="/practice"

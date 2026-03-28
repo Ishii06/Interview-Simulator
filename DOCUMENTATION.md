@@ -1,0 +1,177 @@
+# Project Work Log
+
+Date: 2026-03-28
+
+## Scope Covered
+
+This document summarizes the current implemented state across frontend, backend integration, and ai-python notes, including recent Practice Tests and auth-aware UI changes.
+
+## Frontend Log
+
+### 1) Interview page implemented end-to-end
+
+Implemented a full interview UI and flow in [frontend/app/interview/page.tsx](frontend/app/interview/page.tsx):
+
+- Interview setup form: role, experience, difficulty, skills.
+- Start interview action using backend question API.
+- Voice capture using MediaRecorder.
+- Audio upload for transcription.
+- Automatic next-question loop after each transcription.
+- Conversation timeline (assistant and user turns).
+- Finish and evaluate action.
+- Evaluation report rendering (scores, strengths, improvements, recommendation, per-answer breakdown).
+- Loading and error handling across all async actions.
+
+### 2) Practice Tests flow implemented and upgraded
+
+Practice Tests are implemented across [frontend/app/practice/page.tsx](frontend/app/practice/page.tsx), [frontend/app/practice/aptitude/page.tsx](frontend/app/practice/aptitude/page.tsx), [frontend/app/practice/aptitude/result/page.tsx](frontend/app/practice/aptitude/result/page.tsx), and [frontend/app/store/testStore.js](frontend/app/store/testStore.js).
+
+Current behavior:
+
+- User-defined test setup on Practice page:
+	- role
+	- experience
+	- difficulty
+- Auth-required start:
+	- test start buttons are disabled until session check completes and user is logged in
+	- unauthenticated user is prompted to login
+- Loading UX while creating test:
+	- start buttons show: "Your test is being created..."
+	- duplicate starts are prevented while request is in progress
+- Reduced start latency:
+	- create-test response preloads questions into store
+	- immediate redundant question fetch is skipped when questions already exist
+- Aptitude test page:
+	- countdown timer
+	- answer capture by question id
+	- guarded submit state to avoid double submission
+	- auto-submit on timer expiry
+- Result page after submit:
+	- score
+	- percentage
+	- correct count
+	- per-question review including selected answer, correct answer, correctness badge, and explanation
+
+### 3) Auth store functionality added/expanded
+
+Updated [frontend/app/store/authStore.js](frontend/app/store/authStore.js) with API-based auth actions:
+
+- login(email, password)
+- signup({ name, email, password })
+- logout()
+- fetchCurrentUser()
+- initialized state handling
+- robust loading and error behavior
+
+### 4) Navbar and landing CTA are now auth-aware
+
+Updated [frontend/app/components/ui/Navbar.tsx](frontend/app/components/ui/Navbar.tsx):
+
+- Replaced mock logged-in state with real auth-store session state.
+- Navbar shows "Logout" when logged in.
+- Clicking Logout calls backend logout and redirects to login.
+
+Updated [frontend/app/page.tsx](frontend/app/page.tsx):
+
+- Primary CTA is now dynamic:
+	- logged out: "Start Free Session" -> /login
+	- logged in: "Start your first interview" -> /interview
+
+### 5) Login page wired to real auth
+
+Updated [frontend/app/login/page.tsx](frontend/app/login/page.tsx):
+
+- Controlled email/password fields.
+- Submit handler connected to auth store login.
+- Required-field validation.
+- Error feedback rendering.
+- Loading/disabled submit button state.
+- Redirect after successful login.
+
+### 6) Signup page wired to real auth
+
+Updated [frontend/app/signup/page.tsx](frontend/app/signup/page.tsx):
+
+- Controlled name/email/password fields.
+- Submit handler connected to auth store signup.
+- Required-field validation.
+- Error and success feedback rendering.
+- Loading/disabled submit button state.
+- Redirect to login after successful signup.
+
+### 7) Frontend diagnostics status
+
+After implementation, diagnostics checks were run and the touched auth/frontend files were left with no reported errors.
+
+## Backend Integration Log
+
+### 1) Auth routes used by frontend
+
+Frontend auth integration is aligned to these backend auth routes in [backend/routes/authRoutes.js](backend/routes/authRoutes.js):
+
+- POST /signup
+- POST /login
+- GET /me
+- GET /logout
+
+### 2) Auth controller behavior referenced by frontend
+
+Behavior confirmed from [backend/controllers/authController.js](backend/controllers/authController.js):
+
+- Login sets access_token cookie.
+- Signup currently uses email/password.
+- /me validates cookie and returns current user session.
+- Logout clears access token cookie.
+
+### 3) Practice Tests backend behavior
+
+Practice APIs and behavior are implemented in [backend/routes/testRoutes.js](backend/routes/testRoutes.js), [backend/controllers/testController.js](backend/controllers/testController.js), [backend/routes/resultRoutes.js](backend/routes/resultRoutes.js), and [backend/controllers/resultController.js](backend/controllers/resultController.js).
+
+Current behavior:
+
+- POST /api/tests/create:
+	- protected route (requires logged-in cookie)
+	- user_id is derived from req.user.id, not trusted from client payload
+	- validates role/experience/difficulty
+	- requests questions from ai-python service
+	- inserts test + questions in Supabase
+	- returns test metadata and inserted questions
+	- includes upstream AI error mapping for clearer non-generic failures
+- POST /api/results/submit:
+	- protected route
+	- user_id derived from req.user.id
+	- robust answer normalization (by question id/text/index)
+	- computes score and percentage
+	- persists result
+	- returns detailed review per question:
+		- selected_answer
+		- correct_answer
+		- is_correct
+		- explanation
+
+## AI-Python Log
+
+### 1) Service reviewed for interview flow and evaluation behavior
+
+The interview/evaluation service in [ai-python/app/main.py](ai-python/app/main.py) was reviewed to diagnose evaluation-history issues.
+
+### 2) Evaluation hardening work was attempted, then reverted
+
+A patch was previously prepared to improve candidate-answer extraction and JSON robustness in [ai-python/app/main.py](ai-python/app/main.py), but that patch was later undone by user action.
+
+Current status: ai-python file remains in its user-controlled state after revert.
+
+## Notes and Current Status
+
+- Frontend interview flow is implemented in the interview page.
+- Frontend auth flow is implemented via centralized store calls and current-user hydration.
+- Practice Tests are fully integrated end-to-end with auth-required start and result review UI.
+- Backend endpoints are integrated and consumed from frontend with cookie-based auth.
+- ai-python evaluation hardening is not currently active because reverted.
+
+## Recommended Next Actions
+
+1. Persist signup name into user profile metadata/storage so UI can show user display name.
+2. Add route-level protection for question fetch endpoints if strict ownership checks are required.
+3. Re-apply ai-python evaluation hardening when ready, then verify evaluation with real interview transcripts.
+4. Run full smoke tests across [frontend/app/interview/page.tsx](frontend/app/interview/page.tsx), [frontend/app/practice/page.tsx](frontend/app/practice/page.tsx), [backend/controllers/interviewController.js](backend/controllers/interviewController.js), [backend/controllers/testController.js](backend/controllers/testController.js), and [ai-python/app/main.py](ai-python/app/main.py).

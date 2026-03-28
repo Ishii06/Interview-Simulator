@@ -133,6 +133,7 @@ def build_evaluation_prompt(role, experience, skills, conversation):
     formatted_answers = "\n\n".join(
         [f"Answer {i+1}:\n{ans}" for i, ans in enumerate(user_answers)]
     )
+    print("Formatted Answers for Evaluation Prompt:", formatted_answers)  # Debug log
 
     return f"""
 You are a senior technical interviewer.
@@ -253,17 +254,13 @@ def evaluate_interview(data: dict):
 
     if not conversation:
         return {"error": "Conversation history required"}
-
+    
+    print("Received conversation for evaluation:", conversation)  # Debug log
     prompt = build_evaluation_prompt(
         role,
         experience,
         skills,
         conversation
-    )
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
     )
 
     try:

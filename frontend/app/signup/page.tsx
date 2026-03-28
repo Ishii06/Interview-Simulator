@@ -1,19 +1,52 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, User, Mail, Lock, Sparkles, ChevronLeft } from 'lucide-react';
+import { User, Mail, Lock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../store/authStore';
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { signup, loading } = useAuthStore();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    if (!email || !password) {
+      setError('Email and password are required.');
+      return;
+    }
+
+    try {
+      const data = await signup({ name, email, password });
+      setSuccessMessage(data?.message || 'Signup successful. Please verify your email.');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1200);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Signup failed';
+      setError(message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center items-center p-6 relative">
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full z-0" />
+      <div className="absolute top-1/4 left-1/4 w-100 h-100 bg-emerald-500/5 blur-[120px] rounded-full z-0" />
 
       
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-[420px] z-10"
+        className="w-full max-w-105 z-10"
       >
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-6">
@@ -24,12 +57,18 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl">
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
               <div className="relative group">
                 <User className="absolute left-3.5 top-3.5 text-zinc-600 group-focus-within:text-emerald-400 transition-colors" size={18} />
-                <input type="text" placeholder="Alex Rivera" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700" />
+                <input
+                  type="text"
+                  placeholder="Alex Rivera"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700"
+                />
               </div>
             </div>
 
@@ -37,7 +76,13 @@ export default function SignupPage() {
               <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-3.5 top-3.5 text-zinc-600 group-focus-within:text-emerald-400 transition-colors" size={18} />
-                <input type="email" placeholder="alex@dev.com" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700" />
+                <input
+                  type="email"
+                  placeholder="alex@dev.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700"
+                />
               </div>
             </div>
 
@@ -45,12 +90,34 @@ export default function SignupPage() {
               <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Password</label>
               <div className="relative group">
                 <Lock className="absolute left-3.5 top-3.5 text-zinc-600 group-focus-within:text-emerald-400 transition-colors" size={18} />
-                <input type="password" placeholder="••••••••" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-700"
+                />
               </div>
             </div>
 
-            <button className="w-full bg-white hover:bg-zinc-100 text-zinc-950 font-black py-4 rounded-2xl transition-all shadow-xl shadow-white/5 mt-4">
-              Get Started Now
+            {error && (
+              <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+
+            {successMessage && (
+              <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+                {successMessage}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-white hover:bg-zinc-100 text-zinc-950 font-black py-4 rounded-2xl transition-all shadow-xl shadow-white/5 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating account...' : 'Get Started Now'}
             </button>
           </form>
 

@@ -15,12 +15,13 @@ export default function AptitudeTestPage() {
 
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [timeLeft, setTimeLeft] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (testId) {
+    if (testId && questions.length === 0) {
       fetchQuestions()
     }
-  }, [testId, fetchQuestions])
+  }, [testId, questions.length, fetchQuestions])
 
   useEffect(() => {
     if (endTime) {
@@ -30,7 +31,7 @@ export default function AptitudeTestPage() {
         const remaining = Math.floor((end.getTime() - Date.now()) / 1000)
         setTimeLeft(remaining > 0 ? remaining : 0)
 
-        if (remaining <= 0) {
+        if (remaining <= 0 && !isSubmitting) {
           clearInterval(interval)
           handleSubmit()
         }
@@ -38,13 +39,20 @@ export default function AptitudeTestPage() {
 
       return () => clearInterval(interval)
     }
-  }, [endTime])
+  }, [endTime, isSubmitting])
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
+
+    setIsSubmitting(true)
     const result = await submitTest(answers)
+
     if (result) {
-      router.push("/practice")
+      router.push("/practice/aptitude/result")
+      return
     }
+
+    setIsSubmitting(false)
   }
 
   if (!testId) {
@@ -95,9 +103,10 @@ export default function AptitudeTestPage() {
 
       <button
         onClick={handleSubmit}
-        className="px-6 py-3 bg-indigo-600 rounded-xl"
+        disabled={isSubmitting || loading}
+        className="px-6 py-3 bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl"
       >
-        Submit Test
+        {isSubmitting ? "Submitting..." : "Submit Test"}
       </button>
     </div>
   )

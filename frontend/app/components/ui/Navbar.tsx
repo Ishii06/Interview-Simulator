@@ -1,24 +1,34 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Menu, X, User, LogOut, Settings, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Cpu, Menu, X, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  // Mock State: Switch this to true to see the logged-in UI
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const { user, initialized, fetchCurrentUser, logout } = useAuthStore();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!initialized) {
+      fetchCurrentUser();
+    }
+  }, [initialized, fetchCurrentUser]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
@@ -68,41 +78,13 @@ export default function Navbar() {
 
               <div className="h-6 w-px bg-zinc-800/50" />
 
-              {isLoggedIn ? (
-                /* USER PROFILE SECTION */
-                <div className="relative">
-                  <button 
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="flex items-center gap-3 p-1 pr-3 rounded-full bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold">
-                      JD
-                    </div>
-                    <span className="text-sm font-medium text-zinc-200">John Doe</span>
-                    <ChevronDown size={14} className={`text-zinc-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  <AnimatePresence>
-                    {showProfileMenu && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-3 w-56 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl backdrop-blur-xl"
-                      >
-                        <ProfileLink icon={<LayoutDashboard size={16}/>} label="Dashboard" href="/dashboard" />
-                        <ProfileLink icon={<Settings size={16}/>} label="Settings" href="/settings" />
-                        <div className="h-px bg-zinc-800 my-2 mx-2" />
-                        <button 
-                          onClick={() => setIsLoggedIn(false)}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
-                        >
-                          <LogOut size={16} /> Sign Out
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              {user ? (
+                <button
+                  onClick={handleLogout}
+                  className="relative group px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl text-sm font-bold transition-all overflow-hidden inline-flex items-center gap-2"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
               ) : (
                 /* AUTH LINKS */
                 <Link 
@@ -125,13 +107,5 @@ export default function Navbar() {
         </div>
       </div>
     </motion.nav>
-  );
-}
-
-function ProfileLink({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
-  return (
-    <Link href={href} className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded-xl transition-all">
-      {icon} {label}
-    </Link>
   );
 }

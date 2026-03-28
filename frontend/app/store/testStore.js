@@ -29,6 +29,7 @@ export const useTestStore = create((set, get) => ({
     try {
       const res = await fetch(`${API_BASE}/api/tests/create`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -40,9 +41,12 @@ export const useTestStore = create((set, get) => ({
       }
 
       set({
-        userId: payload?.user_id ?? null,
+        userId: data?.user_id ?? null,
         testId: data.test_id,
         endTime: data.end_time,
+        questions: Array.isArray(data.questions) ? data.questions : [],
+        result: null,
+        error: null,
         loading: false,
       })
 
@@ -55,14 +59,17 @@ export const useTestStore = create((set, get) => ({
 
   // 🔥 Fetch Questions
   fetchQuestions: async () => {
-    const { testId } = get()
+    const { testId, questions } = get()
 
     if (!testId) return
+    if (questions.length > 0) return
 
-    set({ loading: true })
+    set({ loading: true, error: null })
 
     try {
-      const res = await fetch(`${API_BASE}/api/questions/${testId}`)
+      const res = await fetch(`${API_BASE}/api/questions/${testId}`, {
+        credentials: "include",
+      })
       const data = await res.json()
 
       if (!res.ok) {
@@ -80,11 +87,11 @@ export const useTestStore = create((set, get) => ({
 
   // 🔥 Submit Test
   submitTest: async (answers) => {
-    const { testId, userId } = get()
+    const { testId } = get()
 
-    if (!testId || !userId) {
+    if (!testId) {
       set({
-        error: "Missing test or user context. Please start a new test.",
+        error: "Missing test context. Please start a new test.",
         loading: false,
       })
       return null
@@ -95,10 +102,10 @@ export const useTestStore = create((set, get) => ({
     try {
       const res = await fetch(`${API_BASE}/api/results/submit`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           test_id: testId,
-          user_id: userId,
           answers,
         }),
       })
@@ -123,9 +130,12 @@ export const useTestStore = create((set, get) => ({
 
   resetTest: () =>
     set({
+      userId: null,
       testId: null,
+      endTime: null,
       questions: [],
       result: null,
+      loading: false,
       error: null,
     }),
 }))

@@ -3,7 +3,16 @@ import { supabase } from "../config/supabaseClient.js"
 
 export const createTest = async (req, res) => {
   try {
-    const { user_id, role, experience, difficulty } = req.body
+    const { role, experience, difficulty } = req.body
+    const user_id = req.user?.id
+
+    if (!user_id) {
+      return res.status(401).json({ error: "Not authenticated" })
+    }
+
+    if (!role || !experience || !difficulty) {
+      return res.status(400).json({ error: "role, experience and difficulty are required" })
+    }
 
     // 🔥 Call Python
     const response = await axios.post(
@@ -11,7 +20,14 @@ export const createTest = async (req, res) => {
       { role, experience, difficulty }
     )
 
-    const questions = response.data.questions
+    const questions = response?.data?.questions
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      const upstreamError = response?.data?.error || "Question generation failed"
+      return res.status(502).json({
+        error: `AI service error: ${upstreamError}`
+      })
+    }
 
     // 🔥 Always use UTC ISO strings
     const startTime = new Date()
@@ -37,26 +53,38 @@ export const createTest = async (req, res) => {
 
     if (testError) throw testError
 
-    // 🔥 Attach test_id to questions
-    // 🔥 Attach test_id to questions
-const formattedQuestions = questions.map(q => ({
-  ...q,
-  test_id: testData.id
-}))
+    // Attach test_id to every generated question and return inserted rows.
+    const formattedQuestions = questions.map((q) => ({
+      ...q,
+      test_id: testData.id
+    }))
 
-const { error: questionError } = await supabase
-  .from("questions")
-  .insert(formattedQuestions)
+    const { data: insertedQuestions, error: questionError } = await supabase
+      .from("questions")
+      .insert(formattedQuestions)
+      .select("*")
 
-if (questionError) {
-  throw questionError
-}
+    if (questionError) {
+      throw questionError
+    }
+
     res.json({
+      user_id,
       test_id: testData.id,
-      end_time: endISO
+      end_time: endISO,
+      questions: insertedQuestions || []
     })
 
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const upstreamMessage = error.response?.data?.error || error.message
+      const upstreamStatus = error.response?.status
+
+      return res.status(upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 502).json({
+        error: `AI service error: ${upstreamMessage}`
+      })
+    }
+
     res.status(500).json({ error: error.message })
   }
 }
