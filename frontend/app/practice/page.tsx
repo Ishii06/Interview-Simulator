@@ -165,22 +165,16 @@ export default function PracticePage() {
             className="p-10 rounded-4xl border border-zinc-800 bg-zinc-900/40"
           >
             <Code2 size={40} className="text-emerald-400 mb-6" />
-            <h2 className="text-2xl font-bold mb-3">Coding Test</h2>
-
+            <h2 className="text-2xl font-bold mb-3">Coding Practice</h2>
+            <p className="text-zinc-400 mb-8">
+              Practice coding problems and improve your skills.
+            </p>
             <button
-              onClick={() => startTest("coding")}
-              disabled={creatingType !== null || !initialized || !user}
+              onClick={() => router.push("/practice/coding")}
               className="px-6 py-3 bg-emerald-500/20 border border-emerald-500/30 
-              hover:bg-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl text-emerald-300 font-semibold inline-flex items-center gap-2"
+              hover:bg-emerald-500/30 rounded-xl text-emerald-300 font-semibold inline-flex items-center gap-2"
             >
-              {creatingType === "coding" ? (
-                <>
-                  <span className="h-4 w-4 border-2 border-emerald-300/40 border-t-emerald-300 rounded-full animate-spin" />
-                  Your test is being created...
-                </>
-              ) : (
-                "Start Coding"
-              )}
+              Open DSA Sheet
             </button>
           </motion.div>
 

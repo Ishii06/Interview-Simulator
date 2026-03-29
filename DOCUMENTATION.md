@@ -175,3 +175,67 @@ Current status: ai-python file remains in its user-controlled state after revert
 2. Add route-level protection for question fetch endpoints if strict ownership checks are required.
 3. Re-apply ai-python evaluation hardening when ready, then verify evaluation with real interview transcripts.
 4. Run full smoke tests across [frontend/app/interview/page.tsx](frontend/app/interview/page.tsx), [frontend/app/practice/page.tsx](frontend/app/practice/page.tsx), [backend/controllers/interviewController.js](backend/controllers/interviewController.js), [backend/controllers/testController.js](backend/controllers/testController.js), and [ai-python/app/main.py](ai-python/app/main.py).
+
+## Latest Updates (2026-03-29)
+
+This section captures work completed after the original 2026-03-28 log.
+
+### 1) Interview flow split into setup + simulator
+
+Updated interview routing and UI responsibilities:
+
+- [frontend/app/interview/page.tsx](frontend/app/interview/page.tsx) now focuses on:
+	- interview setup inputs
+	- start action that routes to simulator
+	- interview history display
+- [frontend/app/interview/simulator/page.tsx](frontend/app/interview/simulator/page.tsx) now handles the live interview session.
+
+### 2) Simulator UI cleanup and history behavior
+
+- Removed duplicate timeline block from simulator when requested.
+- Kept in-session conversation history visible so assistant/user turns remain reviewable during the active session.
+
+### 3) Typed-answer experiment (temporary) and rollback
+
+A temporary change was implemented to test non-voice interview progression:
+
+- Added text answer + next question flow in simulator.
+- Added temporary backend endpoint for saving typed answers.
+
+After user direction to keep voice flow, these changes were fully reverted:
+
+- Simulator restored to MediaRecorder + transcription workflow.
+- Temporary typed-answer backend route/controller logic removed.
+
+### 4) Voice interview flow restored (current behavior)
+
+Current simulator behavior in [frontend/app/interview/simulator/page.tsx](frontend/app/interview/simulator/page.tsx):
+
+- Start interview
+- Record with microphone
+- Stop recording
+- Upload audio for transcription
+- Append transcript as user message
+- Auto-generate next question
+- Evaluate interview at end
+
+### 5) AI audio 404 fix
+
+Resolved missing audio playback issue where generated question audio URLs returned 404.
+
+- Updated [ai-python/app/main.py](ai-python/app/main.py) to mount static file serving for the audio directory:
+	- `app.mount("/audio", StaticFiles(directory="audio"), name="audio")`
+
+Impact:
+
+- `/audio/<file>.wav` is now served by FastAPI (after AI service restart), so generated interview audio can be fetched by frontend.
+
+### 6) Diagnostics status for latest changes
+
+Post-change diagnostics were run on touched files, with no reported errors in:
+
+- [frontend/app/interview/page.tsx](frontend/app/interview/page.tsx)
+- [frontend/app/interview/simulator/page.tsx](frontend/app/interview/simulator/page.tsx)
+- [backend/controllers/interviewController.js](backend/controllers/interviewController.js)
+- [backend/routes/interviewRoutes.js](backend/routes/interviewRoutes.js)
+- [ai-python/app/main.py](ai-python/app/main.py)

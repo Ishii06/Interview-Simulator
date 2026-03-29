@@ -1,4 +1,5 @@
 from fastapi import FastAPI,APIRouter, UploadFile, File ,HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 from piper import PiperVoice, SynthesisConfig
@@ -36,6 +37,7 @@ syn_config = SynthesisConfig(
 )
 
 os.makedirs("audio", exist_ok=True)
+app.mount("/audio", StaticFiles(directory="audio"), name="audio")
  
 #ishimishi
 class MockTestRequest(BaseModel):
@@ -245,7 +247,7 @@ def generate_question(data: dict):
 
     # 🧠 Ask Gemini
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemma-3-27b-it",
         contents=prompt,
     )
     question_text = response.text.strip()
@@ -305,7 +307,7 @@ def evaluate_interview(data: dict):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemma-3-27b-it",
             contents=prompt,
         )
 

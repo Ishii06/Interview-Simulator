@@ -18,29 +18,23 @@ const toReliableMillis = (value) => {
     return Date.parse(normalized)
   }
 
-  const asLocal = Date.parse(normalized)
-      const key = item?.question_id ?? item?.questionId ?? item?.id
+  return Date.parse(normalized)
+}
 
-const generateReviewExplanation = async (question, submitted, isCorrect) => {
-  try {
-    const explanation = await generateAnswerExplanation({
-      question: question.question,
-      options: Array.isArray(question.options) ? question.options : [],
-      correct_answer: question.correct_answer,
-      selected_answer: submitted ?? null,
-      section: question.section ?? null,
-      is_correct: isCorrect,
-    })
+const normalizeText = (value) => String(value ?? "").trim().toLowerCase()
 
-    if (explanation && String(explanation).trim()) {
-      return String(explanation).trim()
-    }
-  } catch {
-    // Fall through to the deterministic fallback below.
+const normalizeAnswers = (answers) => {
+  const normalized = {
+    byId: {},
+    byQuestion: {},
+    byIndex: {},
   }
 
-  return buildFallbackExplanation(question)
-}
+  if (Array.isArray(answers)) {
+    answers.forEach((item, idx) => {
+      if (!item || typeof item !== "object") return
+
+      const key = item?.question_id ?? item?.questionId ?? item?.id
       const questionText = item?.question ?? item?.question_text
       const value = item?.answer ?? item?.selected_option ?? item?.selectedAnswer
 
@@ -60,7 +54,7 @@ const generateReviewExplanation = async (question, submitted, isCorrect) => {
     return normalized
   }
 
-  if (typeof answers === "object") {
+  if (answers && typeof answers === "object") {
     Object.entries(answers).forEach(([key, value]) => {
       normalized.byId[String(key)] = value
       normalized.byIndex[String(key)] = value
@@ -69,8 +63,6 @@ const generateReviewExplanation = async (question, submitted, isCorrect) => {
 
   return normalized
 }
-
-const normalizeText = (value) => String(value ?? "").trim().toLowerCase()
 
 const buildFallbackExplanation = (question) => {
   if (question?.explanation && String(question.explanation).trim()) {
@@ -82,15 +74,15 @@ const buildFallbackExplanation = (question) => {
     return `This question is marked correct based on the test answer key for ${question?.section ?? "this section"}.`
   }
 
-  const questionText = String(question?.question ?? "this question").trim()
+  const questionText = String(question?.question ?? question?.question_text ?? "this question").trim()
 
-  return `For ${questionText}, the correct option is \"${answer}\" because it matches the wording and the logic required by the question. Compare each option against the key detail in the question to see why the others do not fit as well.`
+  return `For ${questionText}, the correct option is "${answer}" because it matches the wording and the logic required by the question. Compare each option against the key detail in the question to see why the others do not fit as well.`
 }
 
 const generateReviewExplanation = async (question, submitted, isCorrect) => {
   try {
     const explanation = await generateAnswerExplanation({
-      question: question.question,
+      question: question.question ?? question.question_text ?? "",
       options: Array.isArray(question.options) ? question.options : [],
       correct_answer: question.correct_answer,
       selected_answer: submitted ?? null,
@@ -115,15 +107,11 @@ export const submitTest = async (req, res) => {
     const debug = req.query?.debug === "true"
 
     if (!user_id) {
-      return res.status(401).json({
-        error: "Not authenticated",
-      })
+      return res.status(401).json({ error: "Not authenticated" })
     }
 
     if (!test_id) {
-      return res.status(400).json({
-        error: "test_id is required",
-      })
+      return res.status(400).json({ error: "test_id is required" })
     }
 
     const { data: test, error: testError } = await supabase
@@ -158,6 +146,7 @@ export const submitTest = async (req, res) => {
       .from("questions")
       .select("*")
       .eq("test_id", test_id)
+      .order("id", { ascending: true })
 
     if (qError) {
       return res.status(500).json({ error: qError.message })
@@ -166,39 +155,37 @@ export const submitTest = async (req, res) => {
     const submittedAnswers = normalizeAnswers(answers)
     const debugDetails = []
 
-    const review = await Promise.all(questions.map(async (q, idx) => {
-      const submitted = submittedAnswers.byId[String(q.id)]
-        ?? submittedAnswers.byQuestion[normalizeText(q.question)]
-        ?? submittedAnswers.byIndex[String(idx)]
+    const review = await Promise.all((questions || []).map(async (question, idx) => {
+      const submitted =
+        submittedAnswers.byId[String(question.id)] ??
+        submittedAnswers.byQuestion[normalizeText(question.question)] ??
+        submittedAnswers.byQuestion[normalizeText(question.question_text)] ??
+        submittedAnswers.byIndex[String(idx)]
 
-      const isCorrect = normalizeText(submitted) === normalizeText(q.correct_answer)
-
-      const explanation = await generateReviewExplanation(q, submitted, isCorrect)
-
-      const item = {
-        question_id: q.id,
-        section: q.section ?? null,
-        question: q.question,
-        options: Array.isArray(q.options) ? q.options : [],
-        selected_answer: submitted ?? null,
-        correct_answer: q.correct_answer,
-        is_correct: isCorrect,
-        explanation
-      }
+      const isCorrect = normalizeText(submitted) === normalizeText(question.correct_answer)
+      const explanation = await generateReviewExplanation(question, submitted, isCorrect)
 
       debugDetails.push({
-        question_id: q.id,
+        question_id: question.id,
         submitted,
-        correct_answer: q.correct_answer,
-        is_correct: isCorrect
+        correct_answer: question.correct_answer,
+        is_correct: isCorrect,
       })
 
-      return item
+      return {
+        question_id: question.id,
+        section: question.section ?? null,
+        question: question.question ?? question.question_text ?? "",
+        options: Array.isArray(question.options) ? question.options : [],
+        selected_answer: submitted ?? null,
+        correct_answer: question.correct_answer,
+        is_correct: isCorrect,
+        explanation,
+      }
     }))
 
     const score = review.filter((item) => item.is_correct).length
-
-    const total = questions.length
+    const total = questions?.length || 0
     const percentage = total > 0 ? (score / total) * 100 : 0
 
     const { error: resultInsertError } = await supabase.from("results").insert([{
@@ -206,7 +193,7 @@ export const submitTest = async (req, res) => {
       user_id,
       score,
       total,
-      percentage
+      percentage,
     }])
 
     if (resultInsertError) {
@@ -217,19 +204,18 @@ export const submitTest = async (req, res) => {
       .from("tests")
       .update({ is_submitted: true })
       .eq("id", test_id)
+      .eq("user_id", user_id)
 
     if (testUpdateError) {
       return res.status(500).json({ error: testUpdateError.message })
     }
 
     const responseBody = {
-      message: isExpired
-        ? "Time expired. Auto submitted."
-        : "Submitted successfully",
+      message: isExpired ? "Time expired. Auto submitted." : "Submitted successfully",
       score,
       total,
       percentage,
-      review
+      review,
     }
 
     if (debug) {
@@ -240,14 +226,13 @@ export const submitTest = async (req, res) => {
         parsed_start_utc: Number.isFinite(parsedStartTime) ? new Date(parsedStartTime).toISOString() : null,
         parsed_end_utc: Number.isFinite(endTime) ? new Date(endTime).toISOString() : null,
         is_expired: isExpired,
-        answer_match_count: debugDetails.filter(item => item.is_correct).length,
-        answer_details: debugDetails
+        answer_match_count: debugDetails.filter((item) => item.is_correct).length,
+        answer_details: debugDetails,
       }
     }
 
-    res.json(responseBody)
-
+    return res.json(responseBody)
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: error.message })
   }
 }

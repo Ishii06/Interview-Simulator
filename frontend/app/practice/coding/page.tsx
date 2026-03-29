@@ -1,240 +1,428 @@
 ﻿"use client";
 
-import { useMemo, useRef, useState } from "react";
-import {
-	generateInterviewQuestion,
-	transcribeInterviewAnswer,
-} from "@/app/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
-type ChatMessage = {
-	role: "assistant" | "user";
-	content: string;
+type Problem = {
+  name: string;
+  difficulty: "Easy" | "Medium" | "Hard";
 };
 
-export default function CodingPracticePage() {
-	const [role, setRole] = useState("Python Developer");
-	const [level, setLevel] = useState("beginner");
-	const [interviewId, setInterviewId] = useState<string | null>(null);
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [isRecording, setIsRecording] = useState(false);
-	const [isTranscribing, setIsTranscribing] = useState(false);
-	const [audioUrl, setAudioUrl] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
+type Section = {
+  title: string;
+  problems: Problem[];
+};
 
-	const recorderRef = useRef<MediaRecorder | null>(null);
-	const chunksRef = useRef<Blob[]>([]);
+const DATA: Section[] = [
+  {
+    title: "Array / String",
+    problems: [
+      { name: "Merge Strings Alternately", difficulty: "Easy" },
+      { name: "Greatest Common Divisor of Strings", difficulty: "Easy" },
+      { name: "Kids With the Greatest Number of Candies", difficulty: "Easy" },
+      { name: "Can Place Flowers", difficulty: "Easy" },
+      { name: "Reverse Vowels of a String", difficulty: "Easy" },
+      { name: "Reverse Words in a String", difficulty: "Medium" },
+      { name: "Product of Array Except Self", difficulty: "Medium" },
+      { name: "Increasing Triplet Subsequence", difficulty: "Medium" },
+      { name: "String Compression", difficulty: "Medium" },
+    ],
+  },
 
-	const canAskNext = useMemo(() => {
-		return !!interviewId && !isGenerating && !isRecording && !isTranscribing;
-	}, [interviewId, isGenerating, isRecording, isTranscribing]);
+  {
+    title: "Two Pointers",
+    problems: [
+      { name: "Move Zeroes", difficulty: "Easy" },
+      { name: "Is Subsequence", difficulty: "Easy" },
+      { name: "Container With Most Water", difficulty: "Medium" },
+      { name: "Max Number of K-Sum Pairs", difficulty: "Medium" },
+    ],
+  },
 
-	const requestQuestion = async (
-		interviewHistory: ChatMessage[],
-		currentInterviewId?: string
-	) => {
-		setIsGenerating(true);
-		setError(null);
+  {
+    title: "Sliding Window",
+    problems: [
+      { name: "Maximum Average Subarray I", difficulty: "Easy" },
+      { name: "Maximum Number of Vowels in a Substring of Given Length", difficulty: "Medium" },
+      { name: "Max Consecutive Ones III", difficulty: "Medium" },
+      { name: "Longest Subarray of 1's After Deleting One Element", difficulty: "Medium" },
+    ],
+  },
 
-		try {
-			const data = await generateInterviewQuestion({
-				role,
-				experience: level,
-				difficulty: level,
-				skills: ["python"],
-				history: interviewHistory,
-				interviewId: currentInterviewId,
-			});
+  {
+    title: "Prefix Sum",
+    problems: [
+      { name: "Find the Highest Altitude", difficulty: "Easy" },
+      { name: "Find Pivot Index", difficulty: "Easy" },
+    ],
+  },
 
-			setInterviewId(data.interviewId);
-			if (data.audioUrl) {
-				setAudioUrl(data.audioUrl);
-			}
+  {
+    title: "Hash Map / Set",
+    problems: [
+      { name: "Find the Difference of Two Arrays", difficulty: "Easy" },
+      { name: "Unique Number of Occurrences", difficulty: "Easy" },
+      { name: "Determine if Two Strings Are Close", difficulty: "Medium" },
+      { name: "Equal Row and Column Pairs", difficulty: "Medium" },
+    ],
+  },
 
-			if (data.questionText) {
-				setMessages((prev) => [...prev, { role: "assistant", content: data.questionText }]);
-			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to get question");
-		} finally {
-			setIsGenerating(false);
-		}
-	};
+  {
+    title: "Stack",
+    problems: [
+      { name: "Removing Stars From a String", difficulty: "Medium" },
+      { name: "Asteroid Collision", difficulty: "Medium" },
+      { name: "Decode String", difficulty: "Medium" },
+    ],
+  },
 
-	const startInterview = async () => {
-		setMessages([]);
-		setInterviewId(null);
-		setAudioUrl(null);
-		await requestQuestion([], undefined);
-	};
+  {
+    title: "Queue",
+    problems: [
+      { name: "Number of Recent Calls", difficulty: "Easy" },
+      { name: "Dota2 Senate", difficulty: "Medium" },
+    ],
+  },
 
-	const askNextQuestion = async (historyOverride?: ChatMessage[]) => {
-		const history = historyOverride || messages;
-		await requestQuestion(history, interviewId || undefined);
-	};
+  {
+    title: "Linked List",
+    problems: [
+      { name: "Delete the Middle Node of a Linked List", difficulty: "Medium" },
+      { name: "Odd Even Linked List", difficulty: "Medium" },
+      { name: "Reverse Linked List", difficulty: "Easy" },
+      { name: "Maximum Twin Sum of a Linked List", difficulty: "Medium" },
+    ],
+  },
 
-	const startRecording = async () => {
-		if (!interviewId) {
-			setError("Start interview first to create an interview session.");
-			return;
-		}
+  {
+    title: "Binary Tree - DFS",
+    problems: [
+      { name: "Maximum Depth of Binary Tree", difficulty: "Easy" },
+      { name: "Leaf-Similar Trees", difficulty: "Easy" },
+      { name: "Count Good Nodes in Binary Tree", difficulty: "Medium" },
+      { name: "Path Sum III", difficulty: "Medium" },
+      { name: "Longest ZigZag Path in a Binary Tree", difficulty: "Medium" },
+      { name: "Lowest Common Ancestor of a Binary Tree", difficulty: "Medium" },
+    ],
+  },
 
-		setError(null);
+  {
+    title: "Binary Tree - BFS",
+    problems: [
+      { name: "Binary Tree Right Side View", difficulty: "Medium" },
+      { name: "Maximum Level Sum of a Binary Tree", difficulty: "Medium" },
+    ],
+  },
 
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			const recorder = new MediaRecorder(stream);
-			chunksRef.current = [];
+  {
+    title: "Binary Search Tree",
+    problems: [
+      { name: "Search in a BST", difficulty: "Easy" },
+      { name: "Delete Node in a BST", difficulty: "Medium" },
+    ],
+  },
 
-			recorder.ondataavailable = (event: BlobEvent) => {
-				if (event.data.size > 0) {
-					chunksRef.current.push(event.data);
-				}
-			};
+  {
+    title: "Graphs - DFS",
+    problems: [
+      { name: "Keys and Rooms", difficulty: "Medium" },
+      { name: "Number of Provinces", difficulty: "Medium" },
+      { name: "Reorder Routes to Make All Paths Lead to the City Zero", difficulty: "Medium" },
+      { name: "Evaluate Division", difficulty: "Medium" },
+    ],
+  },
 
-			recorder.onstop = async () => {
-				setIsRecording(false);
-				setIsTranscribing(true);
+  {
+    title: "Graphs - BFS",
+    problems: [
+      { name: "Nearest Exit from Entrance in Maze", difficulty: "Medium" },
+      { name: "Rotting Oranges", difficulty: "Medium" },
+    ],
+  },
 
-				try {
-					const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
-					const data = await transcribeInterviewAnswer(audioBlob);
-					const transcript = (data.text || "").trim();
+  {
+    title: "Heap / Priority Queue",
+    problems: [
+      { name: "Kth Largest Element in an Array", difficulty: "Medium" },
+      { name: "Smallest Number in Infinite Set", difficulty: "Medium" },
+      { name: "Maximum Subsequence Score", difficulty: "Medium" },
+      { name: "Total Cost to Hire K Workers", difficulty: "Medium" },
+    ],
+  },
 
-					if (transcript) {
-						const updatedHistory: ChatMessage[] = [
-							...messages,
-							{ role: "user", content: transcript },
-						];
+  {
+    title: "Binary Search",
+    problems: [
+      { name: "Guess Number Higher or Lower", difficulty: "Easy" },
+      { name: "Successful Pairs of Spells and Potions", difficulty: "Medium" },
+      { name: "Find Peak Element", difficulty: "Medium" },
+      { name: "Koko Eating Bananas", difficulty: "Medium" },
+    ],
+  },
 
-						setMessages(updatedHistory);
-						await askNextQuestion(updatedHistory);
-					} else {
-						setError("Whisper could not detect speech. Please try again.");
-					}
-				} catch (err) {
-					setError(err instanceof Error ? err.message : "Failed to transcribe answer");
-				} finally {
-					setIsTranscribing(false);
-					stream.getTracks().forEach((track) => track.stop());
-				}
-			};
+  {
+    title: "Backtracking",
+    problems: [
+      { name: "Letter Combinations of a Phone Number", difficulty: "Medium" },
+      { name: "Combination Sum III", difficulty: "Medium" },
+    ],
+  },
 
-			recorderRef.current = recorder;
-			recorder.start();
-			setIsRecording(true);
-		} catch (err) {
-			setError(
-				err instanceof Error
-					? err.message
-					: "Microphone access denied. Please allow microphone permission."
-			);
-		}
-	};
+  {
+    title: "DP - 1D",
+    problems: [
+      { name: "N-th Tribonacci Number", difficulty: "Easy" },
+      { name: "Min Cost Climbing Stairs", difficulty: "Easy" },
+      { name: "House Robber", difficulty: "Medium" },
+      { name: "Domino and Tromino Tiling", difficulty: "Medium" },
+    ],
+  },
 
-	const stopRecording = () => {
-		const recorder = recorderRef.current;
-		if (recorder && recorder.state !== "inactive") {
-			recorder.stop();
-		}
-	};
+  {
+    title: "DP - Multidimensional",
+    problems: [
+      { name: "Unique Paths", difficulty: "Medium" },
+      { name: "Longest Common Subsequence", difficulty: "Medium" },
+      { name: "Best Time to Buy and Sell Stock with Transaction Fee", difficulty: "Medium" },
+      { name: "Edit Distance", difficulty: "Medium" },
+    ],
+  },
 
-	return (
-		<div className="min-h-screen bg-black text-white p-8 md:p-12">
-			<div className="mx-auto max-w-4xl">
-				<h1 className="text-3xl md:text-4xl font-bold mb-6">Python Voice Interview</h1>
-				<p className="text-zinc-300 mb-8">
-					Speak your Python answer. Your voice is transcribed with Whisper and saved to
-					Supabase history in the same backend request.
-				</p>
+  {
+    title: "Bit Manipulation",
+    problems: [
+      { name: "Counting Bits", difficulty: "Easy" },
+      { name: "Single Number", difficulty: "Easy" },
+      { name: "Minimum Flips to Make a OR b Equal to c", difficulty: "Medium" },
+    ],
+  },
 
-				<div className="grid md:grid-cols-2 gap-4 mb-6">
-					<div>
-						<label className="block text-sm text-zinc-400 mb-2">Role</label>
-						<input
-							value={role}
-							onChange={(e) => setRole(e.target.value)}
-							className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2"
-						/>
-					</div>
+  {
+    title: "Trie",
+    problems: [
+      { name: "Implement Trie (Prefix Tree)", difficulty: "Medium" },
+      { name: "Search Suggestions System", difficulty: "Medium" },
+    ],
+  },
 
-					<div>
-						<label className="block text-sm text-zinc-400 mb-2">Level</label>
-						<select
-							value={level}
-							onChange={(e) => setLevel(e.target.value)}
-							className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2"
-						>
-							<option value="beginner">beginner</option>
-							<option value="intermediate">intermediate</option>
-							<option value="advanced">advanced</option>
-						</select>
-					</div>
-				</div>
+  {
+    title: "Intervals",
+    problems: [
+      { name: "Non-overlapping Intervals", difficulty: "Medium" },
+      { name: "Minimum Number of Arrows to Burst Balloons", difficulty: "Medium" },
+    ],
+  },
 
-				<div className="flex flex-wrap gap-3 mb-8">
-					<button
-						onClick={startInterview}
-						disabled={isGenerating || isRecording || isTranscribing}
-						className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
-					>
-						{isGenerating && !interviewId ? "Starting..." : "Start Interview"}
-					</button>
+  {
+    title: "Monotonic Stack",
+    problems: [
+      { name: "Daily Temperatures", difficulty: "Medium" },
+      { name: "Online Stock Span", difficulty: "Medium" },
+    ],
+  },
+];
 
-					{!isRecording ? (
-						<button
-							onClick={startRecording}
-							disabled={!canAskNext}
-							className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60"
-						>
-							Start Recording
-						</button>
-					) : (
-						<button
-							onClick={stopRecording}
-							className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500"
-						>
-							Stop Recording
-						</button>
-					)}
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/'/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
-					<button
-						onClick={() => askNextQuestion()}
-						disabled={!canAskNext || messages.length === 0}
-						className="px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 disabled:opacity-60"
-					>
-						Ask Next Question
-					</button>
-				</div>
+const getLeetCodeUrl = (name: string) => `https://leetcode.com/problems/${toSlug(name)}/`;
 
-				{isTranscribing && <p className="mb-4 text-amber-300">Transcribing with Whisper...</p>}
-				{error && <p className="mb-4 text-rose-400">{error}</p>}
+const totalProblems = DATA.reduce((sum, section) => sum + section.problems.length, 0);
 
-				{audioUrl && (
-					<div className="mb-8">
-						<p className="text-sm text-zinc-400 mb-2">Latest AI Question Audio</p>
-						<audio controls src={audioUrl} className="w-full" />
-					</div>
-				)}
+const STORAGE_KEY = "coding-sheet-progress";
 
-				<div className="space-y-4">
-					{messages.map((message, index) => (
-						<div
-							key={`${message.role}-${index}`}
-							className={`rounded-xl p-4 border ${
-								message.role === "assistant"
-									? "bg-zinc-900 border-zinc-700"
-									: "bg-emerald-950/30 border-emerald-800"
-							}`}
-						>
-							<p className="text-xs uppercase tracking-wide text-zinc-400 mb-2">
-								{message.role === "assistant" ? "Interviewer" : "You"}
-							</p>
-							<p className="whitespace-pre-wrap">{message.content}</p>
-						</div>
-					))}
-				</div>
-			</div>
-		</div>
-	);
+const buildProblemId = (sectionTitle: string, problemName: string) => `${sectionTitle}::${problemName}`;
+
+export default function CodingSheetPage() {
+  const [completed, setCompleted] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setCompleted(JSON.parse(saved));
+      }
+    } catch {
+      // Ignore storage errors and fall back to in-memory state.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [completed]);
+
+  const completedCount = useMemo(
+    () => Object.values(completed).filter(Boolean).length,
+    [completed]
+  );
+
+  const leftCount = totalProblems - completedCount;
+  const progressPercent = totalProblems > 0 ? (completedCount / totalProblems) * 100 : 0;
+  const circleRadius = 54;
+  const circleStroke = 8;
+  const circleCircumference = 2 * Math.PI * circleRadius;
+  const circleOffset = circleCircumference - (progressPercent / 100) * circleCircumference;
+
+  const toggleProblem = (problemId: string) => {
+    setCompleted((previous) => ({
+      ...previous,
+      [problemId]: !previous[problemId],
+    }));
+  };
+
+  return (
+    <div className="pt-8 min-h-screen bg-[#07070a] text-white">
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
+        <div className="mb-5 rounded-3xl border border-white/10 bg-linear-to-br from-white/6 via-white/3 to-transparent px-6 py-5 shadow-2xl shadow-black/20 text-center">
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-indigo-300/80">Coding Practice</p>
+          <h1 className="text-2xl font-black md:text-3xl">DSA Cheat Sheet</h1>
+          <p className="mx-auto mt-2 max-w-3xl text-sm text-white/65">
+            Ace the coding interview with a compact checklist. Mark each problem as done and track your progress on the right.
+          </p>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="space-y-3">
+            {DATA.map((section) => (
+              <section key={section.title} className="rounded-3xl border border-white/10 bg-white/3 p-3.5 md:p-4">
+                <div className="mb-2.5 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-base md:text-lg font-semibold text-white">{section.title}</h2>
+                    <p className="mt-0.5 text-[11px] md:text-xs text-white/45">{section.problems.length} problems</p>
+                  </div>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wide text-white/60">
+                    {section.problems.length}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {section.problems.map((problem) => {
+                    const problemId = buildProblemId(section.title, problem.name);
+                    const isDone = Boolean(completed[problemId]);
+
+                    return (
+                      <div
+                        key={problem.name}
+                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-indigo-400/30 hover:bg-white/5"
+                      >
+                        <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={isDone}
+                            onChange={() => toggleProblem(problemId)}
+                            className="h-4 w-4 shrink-0 accent-emerald-500"
+                          />
+                          <span className={`min-w-0 truncate text-sm leading-snug ${isDone ? "text-white/45 line-through" : "text-white"}`}>
+                            {problem.name}
+                          </span>
+                        </label>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                              problem.difficulty === "Easy"
+                                ? "bg-emerald-500/15 text-emerald-300"
+                                : problem.difficulty === "Medium"
+                                ? "bg-amber-500/15 text-amber-300"
+                                : "bg-rose-500/15 text-rose-300"
+                            }`}
+                          >
+                            {problem.difficulty}
+                          </span>
+
+                          <Link
+                            href={getLeetCodeUrl(problem.name)}
+                            target="_blank"
+                            className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1.5 text-[11px] md:text-xs font-medium text-indigo-300 transition hover:border-indigo-400/50 hover:bg-indigo-500/20"
+                          >
+                            Solve →
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          <aside className="lg:sticky lg:top-6 h-fit rounded-3xl border border-white/10 bg-white/3 p-5 md:p-6 shadow-lg shadow-black/20">
+            <p className="text-xs uppercase tracking-[0.3em] text-indigo-300/80">Progress</p>
+            <h2 className="mt-2 text-xl font-bold">Your Checklist</h2>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="flex items-center justify-center">
+                <div className="relative h-40 w-40">
+                  <svg className="h-40 w-40 -rotate-90" viewBox="0 0 120 120">
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r={circleRadius}
+                      stroke="rgba(255,255,255,0.10)"
+                      strokeWidth={circleStroke}
+                      fill="none"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r={circleRadius}
+                      stroke="url(#progressGradient)"
+                      strokeWidth={circleStroke}
+                      strokeLinecap="round"
+                      fill="none"
+                      strokeDasharray={circleCircumference}
+                      strokeDashoffset={circleOffset}
+                    />
+                    <defs>
+                      <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#34d399" />
+                        <stop offset="100%" stopColor="#6366f1" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <p className="text-3xl font-black text-white">{completedCount}</p>
+                    <p className="text-sm text-white/45">/{totalProblems}</p>
+                    <p className="mt-1 text-sm text-white/55">Solved</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-3 text-center">
+                  <p className="text-white/45">Completed</p>
+                  <p className="mt-1 text-2xl font-bold text-emerald-300">{completedCount}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-3 text-center">
+                  <p className="text-white/45">Left</p>
+                  <p className="mt-1 text-2xl font-bold text-rose-300">{leftCount}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-white/45">Sections</p>
+                <p className="mt-1 text-2xl font-bold text-white">{DATA.length}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-white/45">Problems</p>
+                <p className="mt-1 text-2xl font-bold text-white">{totalProblems}</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -72,7 +72,7 @@ function Hero({ user }: { user: any }) {
   }, []);
 
   return (
-    <section className="mt-10 relative flex flex-col items-center justify-center px-6 pt-24 pb-32 overflow-hidden">
+    <section className="mt-10 relative flex flex-col items-center justify-center px-6 pt-24 pb-17 overflow-hidden">
       {/* Dot grid background */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-30"
