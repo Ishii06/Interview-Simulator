@@ -71,12 +71,10 @@ const buildFallbackExplanation = (question) => {
 
   const answer = String(question?.correct_answer ?? "").trim()
   if (!answer) {
-    return `This question is marked correct based on the test answer key for ${question?.section ?? "this section"}.`
+    return `This question is marked correct for ${question?.section ?? "this section"}.`
   }
 
-  const questionText = String(question?.question ?? question?.question_text ?? "this question").trim()
-
-  return `For ${questionText}, the correct option is "${answer}" because it matches the wording and the logic required by the question. Compare each option against the key detail in the question to see why the others do not fit as well.`
+  return `The correct answer is "${answer}" because it matches the main idea in the question.`
 }
 
 const generateReviewExplanation = async (question, submitted, isCorrect) => {

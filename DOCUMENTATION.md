@@ -239,3 +239,26 @@ Post-change diagnostics were run on touched files, with no reported errors in:
 - [backend/controllers/interviewController.js](backend/controllers/interviewController.js)
 - [backend/routes/interviewRoutes.js](backend/routes/interviewRoutes.js)
 - [ai-python/app/main.py](ai-python/app/main.py)
+
+## Final Summary (2026-03-29)
+
+Quick summary of completed work:
+
+- Interview experience was restructured into two pages:
+	- setup + history page
+	- simulator page for active interview flow
+- Simulator behavior was cleaned up and stabilized while preserving conversation history visibility.
+- A temporary typed-answer implementation was created for testing and then fully reverted per product direction.
+- Final simulator behavior now remains voice-first:
+	- microphone recording
+	- backend transcription
+	- next-question generation loop
+	- final evaluation report
+- AI audio playback issue was resolved by serving generated files from the audio directory in the Python service.
+- Frontend, backend, and ai-python touched files were validated with diagnostics and left without reported errors.
+
+Current stable state:
+
+- Voice interview simulator is active and integrated end-to-end.
+- Interview history remains available.
+- Generated question audio is accessible through the AI service static audio route.

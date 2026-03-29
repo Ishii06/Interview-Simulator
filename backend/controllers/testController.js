@@ -56,6 +56,7 @@ export const createTest = async (req, res) => {
     // Attach test_id to every generated question and return inserted rows.
     const formattedQuestions = questions.map((q) => ({
       ...q,
+      difficulty: q.difficulty ?? difficulty,
       test_id: testData.id
     }))
 

@@ -107,8 +107,8 @@ def build_answer_explanation_prompt(question: str, options: List[str], correct_a
 You are an expert tutor explaining a multiple-choice question to a student.
 
 Explain the answer in plain, easy-to-understand language.
-Make the explanation specific to this exact question. Do not reuse generic wording.
-Vary the phrasing naturally across questions.
+Make the explanation specific to this exact question.
+Keep it short and useful.
 
 Section: {section or "General"}
 Question: {question}
@@ -118,10 +118,11 @@ Correct answer: {correct_answer}
 Result: {correctness_text}
 
 Rules:
-- Write 4 to 6 short sentences.
-- Explain the reasoning using the details from this question, not a generic template.
-- If the student answer is wrong, explain the mistake clearly and simply.
-- If the student answer is correct, reinforce the reasoning and briefly mention why the other options do not fit.
+- Write 1 to 2 short sentences only.
+- Keep it around 1 to 2 lines max.
+- Focus only on the key reason the answer is right.
+- If the student answer is wrong, mention the main mistake briefly.
+- If the student answer is correct, reinforce the core logic briefly.
 - Do not use markdown or bullet points.
 - Do not mention that you are an AI.
 - Keep the explanation focused and beginner-friendly.
@@ -384,7 +385,7 @@ def generate_answer_explanation(data: AnswerExplanationRequest):
         explanation = (response.text or "").strip()
         if not explanation:
             return {
-                "explanation": f"The correct answer for this question is {data.correct_answer}. Review the wording of the question and compare it with each option to see why it fits best."
+                "explanation": f"The correct answer is {data.correct_answer}. It fits the key idea in the question better than the other options."
             }
 
         return {"explanation": explanation}

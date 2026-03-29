@@ -46,6 +46,7 @@ export default function AptitudeTestPage() {
   // Get current section questions
   const currentSectionQuestions = questionsBySection[activeSection as keyof typeof questionsBySection] || []
   const currentQuestion = currentSectionQuestions[currentQuestionIndex]
+  const sectionOrder = Object.keys(questionsBySection)
 
   // Calculate section stats
   const sectionStats = useMemo(() => {
@@ -117,6 +118,15 @@ export default function AptitudeTestPage() {
   const handleNextQuestion = () => {
     if (currentQuestionIndex < currentSectionQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
+      return
+    }
+
+    const currentSectionIndex = sectionOrder.indexOf(activeSection)
+    const nextSection = sectionOrder[currentSectionIndex + 1]
+
+    if (nextSection) {
+      setActiveSection(nextSection)
+      setCurrentQuestionIndex(0)
     }
   }
 
@@ -137,16 +147,16 @@ export default function AptitudeTestPage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50 px-4 md:px-6 py-7">
+      <div className="sticky top-0 z-20 bg-zinc-950/85 backdrop-blur-xl border-b border-zinc-800/50 px-4 md:px-6 py-5">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold">Aptitude Test</h1>
-            <p className="text-xs md:text-sm text-zinc-500 mt-1">Progress: {totalQuestionsAnswered} of {totalQuestions} answered</p>
+            <h1 className="text-lg md:text-xl font-semibold tracking-tight text-zinc-100">Aptitude Test</h1>
+            <p className="text-[11px] md:text-xs text-zinc-500 mt-1">Progress: {totalQuestionsAnswered} of {totalQuestions} answered</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/60 border border-zinc-800">
               <Clock size={14} className="text-amber-400" />
-              <span className="text-sm md:text-base font-mono font-bold">
+              <span className="text-sm md:text-base font-mono font-medium text-zinc-100">
                 {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
               </span>
             </div>
@@ -171,7 +181,7 @@ export default function AptitudeTestPage() {
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className={`text-base md:text-lg font-semibold ${config.color}`}>{config.label}</h3>
+                  <h3 className={`text-sm md:text-base font-semibold tracking-tight ${config.color}`}>{config.label}</h3>
                   <span className="text-xs px-2 py-1 rounded-full bg-zinc-800">{stats.total} Qs</span>
                 </div>
                 <div className="space-y-1.5">
@@ -195,16 +205,16 @@ export default function AptitudeTestPage() {
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 md:p-6 mb-4">
           {/* Section Label */}
           <div className="mb-4 flex items-center gap-2">
-            <span className={`text-xs md:text-sm font-semibold px-2.5 py-1 rounded-full ${SECTION_CONFIG[activeSection as keyof typeof SECTION_CONFIG].bg} ${SECTION_CONFIG[activeSection as keyof typeof SECTION_CONFIG].color}`}>
+            <span className={`text-[11px] md:text-xs font-medium px-2.5 py-1 rounded-full ${SECTION_CONFIG[activeSection as keyof typeof SECTION_CONFIG].bg} ${SECTION_CONFIG[activeSection as keyof typeof SECTION_CONFIG].color}`}>
               {SECTION_CONFIG[activeSection as keyof typeof SECTION_CONFIG].label}
             </span>
-            <span className="text-xs md:text-sm text-zinc-500">
+            <span className="text-[11px] md:text-xs text-zinc-500">
               Question {currentQuestionIndex + 1} of {currentSectionQuestions.length}
             </span>
           </div>
 
           {/* Question */}
-          <h2 className="text-lg md:text-xl font-semibold mb-5 leading-relaxed text-zinc-100">
+          <h2 className="text-base md:text-lg font-medium mb-5 leading-relaxed text-zinc-200 tracking-tight">
             {currentQuestion.question}
           </h2>
 
@@ -229,7 +239,7 @@ export default function AptitudeTestPage() {
                   }
                   className="mt-1 w-4 h-4 accent-indigo-500 cursor-pointer"
                 />
-                <span className="text-sm md:text-base text-zinc-300 group-hover:text-zinc-100 transition">{opt}</span>
+                <span className="text-sm md:text-[15px] text-zinc-300 group-hover:text-zinc-100 transition leading-relaxed">{opt}</span>
               </label>
             ))}
           </div>
@@ -256,21 +266,15 @@ export default function AptitudeTestPage() {
             />
           </div>
 
-          {currentQuestionIndex === currentSectionQuestions.length - 1 ? (
-            <button
-              onClick={handleNextQuestion}
-              className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-xs md:text-sm font-medium inline-flex items-center gap-2"
-            >
-              Next <ChevronRight size={16} />
-            </button>
-          ) : (
-            <button
-              onClick={handleNextQuestion}
-              className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-xs md:text-sm font-medium inline-flex items-center gap-2"
-            >
-              Next <ChevronRight size={16} />
-            </button>
-          )}
+          <button
+            onClick={handleNextQuestion}
+            className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-xs md:text-sm font-medium inline-flex items-center gap-2"
+          >
+            {currentQuestionIndex === currentSectionQuestions.length - 1 && sectionOrder.indexOf(activeSection) < sectionOrder.length - 1
+              ? "Next Section"
+              : "Next"}
+            <ChevronRight size={16} />
+          </button>
         </div>
 
         {/* Submit Button */}
