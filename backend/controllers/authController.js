@@ -2,10 +2,15 @@
 import { supabase } from "../config/supabaseClient.js";
 
 export const signup = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        name: name || null,
+      },
+    },
   });
   if (error) return res.status(400).json({ error: error.message });
   res.json({ message: "Signup successful. Please verify email." });

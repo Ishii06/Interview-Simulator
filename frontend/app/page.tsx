@@ -51,7 +51,161 @@ function MagneticButton({
 
   return href ? <Link href={href}>{inner}</Link> : inner;
 }
+import { Check, Sparkles, ShieldCheck, Trophy } from 'lucide-react';
 
+function Pricing() {
+  const [annual, setAnnual] = useState(false);
+
+  const plans = [
+    {
+      name: "Starter",
+      price: "0",
+      desc: "Quick sprint prep.",
+      features: ["3 Interviews", "PDF Feedback", "Basic Bank"],
+      cta: "Start",
+      highlight: false,
+    },
+    {
+      name: "Pro",
+      price: annual ? "499" : "699",
+      desc: "The FAANG crusher.",
+      features: ["Unlimited", "Voice AI", "Gemini 1.5 Pro", "Company Modes"],
+      cta: "Go Pro",
+      highlight: true,
+    },
+    {
+      name: "Ultra",
+      price: annual ? "899" : "1199",
+      desc: "Lead & Exec roles.",
+      features: ["Analytics", "Roadmap", "Beta Access", "Priority"],
+      cta: "Unlock",
+      highlight: false,
+    },
+  ];
+
+  return (
+    <section id="pricing" className="px-6 py-16 max-w-6xl mx-auto relative">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[300px] bg-cyan-500/5 blur-[120px] rounded-full -z-10" />
+
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="max-w-xl text-left">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            className="flex items-center gap-2 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-3"
+          >
+            <Trophy size={12} /> Pricing Plans
+          </motion.div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white">
+            Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500">Level Up?</span>
+          </h2>
+        </div>
+        
+        {/* Toggle with Savings Badge */}
+        <div className="flex flex-col items-end gap-3">
+          {annual && (
+            <motion.span 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[10px] font-black text-cyan-400 bg-cyan-400/10 px-3 py-1 rounded-full border border-cyan-400/20 tracking-widest uppercase"
+            >
+              Save up to 30%
+            </motion.span>
+          )}
+          <div className="inline-flex items-center p-1 bg-zinc-950 border border-white/5 rounded-xl shadow-2xl overflow-hidden">
+            <button 
+              onClick={() => setAnnual(false)}
+              className={`relative px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-500 ${!annual ? "text-cyan-400" : "text-zinc-500"}`}
+            >
+              Monthly
+              {!annual && <motion.div layoutId="compactTab" className="absolute inset-0 bg-cyan-400 rounded-lg -z-10" />}
+            </button>
+            <button 
+              onClick={() => setAnnual(true)}
+              className={`relative px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-500 ${annual ? "text-cyan-400" : "text-zinc-500"}`}
+            >
+              Yearly
+              {annual && <motion.div layoutId="compactTab" className="absolute inset-0 bg-cyan-400 rounded-lg -z-10" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-5">
+        {plans.map((plan, i) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className={`group relative p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col ${
+              plan.highlight 
+                ? "bg-zinc-900/50 border-cyan-500/40 shadow-[0_20px_50px_rgba(34,211,238,0.1)] ring-1 ring-cyan-400/20" 
+                : "bg-zinc-950/40 border-white/5 backdrop-blur-xl hover:border-white/10"
+            }`}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className={`text-xl font-black tracking-tight mb-1 ${plan.highlight ? "text-cyan-400" : "text-white"}`}>
+                  {plan.name}
+                </h3>
+                <p className="text-xs font-medium text-zinc-500">{plan.desc}</p>
+              </div>
+              {plan.highlight && (
+                <div className="bg-cyan-500/10 text-cyan-400 text-[8px] font-black px-2 py-1 rounded-md border border-cyan-500/20 uppercase tracking-tighter">
+                  Popular
+                </div>
+              )}
+            </div>
+
+            <div className="mb-8">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black tracking-tighter text-white">₹{plan.price}</span>
+                <span className="text-zinc-600 font-bold text-[10px] uppercase">/mo</span>
+              </div>
+              {/* Billed Annually Information */}
+              <AnimatePresence>
+                {annual && plan.price !== "0" && (
+                  <motion.p 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-[9px] font-bold text-zinc-600 uppercase tracking-[0.15em] mt-2 italic"
+                  >
+                    * Billed annually (₹{parseInt(plan.price) * 12}/yr)
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 mb-8 flex-grow">
+              {plan.features.map((feature) => (
+                <div key={feature} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center ${plan.highlight ? "bg-cyan-500/20" : "bg-white/5"}`}>
+                    <ShieldCheck size={12} className={plan.highlight ? "text-cyan-300" : "text-zinc-600"} />
+                  </div>
+                  <span className={`text-[11px] font-bold ${plan.highlight ? "text-zinc-200" : "text-zinc-500"}`}>
+                    {feature}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <button className={`w-full py-4 rounded-2xl text-[10px] font-black tracking-[0.2em] uppercase transition-all relative overflow-hidden ${
+              plan.highlight 
+                ? "bg-white text-black hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]" 
+                : "bg-zinc-900 text-white border border-white/5 hover:border-cyan-500/30"
+            }`}>
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {plan.cta} <Zap size={12} className={plan.highlight ? "fill-black" : "text-cyan-400"} />
+              </span>
+            </button>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 
 
@@ -466,27 +620,138 @@ function Features() {
           </div>
         </motion.div>
       </div>
-
-      {/* ── ROW 3: CTA strip ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex flex-col sm:flex-row items-center justify-between gap-5 px-8 py-6 rounded-3xl border border-white/[0.06] bg-white/[0.015]"
-      >
-        <p className="text-white/30 text-[14px] max-w-sm leading-relaxed">
-          Ready to stop fumbling in real interviews?<br />
-          <span className="text-white/50">First session free — no card needed.</span>
-        </p>
-        <Link
-          href="/login"
-          className="flex-shrink-0 flex items-center gap-2 px-7 py-3.5 bg-white text-black rounded-2xl font-black text-[13px] hover:bg-white/90 transition-all"
-        >
-          Start now <ArrowUpRight size={13} />
-        </Link>
-      </motion.div>
+      <div className="mt-24">
+  <Pricing />
+</div>
+      
     </section>
+  );
+}
+
+import { Mail, ArrowRight, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+
+function Footer() {
+  const currentYear = new Date().getFullYear();
+
+  const handleEmailClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const email = "tejas@solesphere.ai";
+    window.location.href = `mailto:${email}?subject=Inquiry from Solesphere`;
+  };
+
+  return (
+    <footer className="relative overflow-hidden border-t border-cyan-500/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.05),transparent_45%),linear-gradient(180deg,#050507_0%,#0a0a10_35%,#07070a_100%)] text-white pt-24 pb-12">
+      <div className="pointer-events-none absolute left-1/2 h-64 w-[80%] -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-[-20%] h-60 w-80 rounded-full bg-emerald-400/10 blur-3xl" />
+
+      <div className="relative max-w-7xl mx-auto px-6">
+        <div className="mb-12 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl px-6 py-7 md:px-8 md:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <p className="text-[10px] font-black tracking-[0.28em] uppercase text-cyan-300/75 mb-2">Interview Smarter</p>
+            <h3 className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Build interview confidence daily.
+            </h3>
+          </div>
+          <Link
+            href="/login"
+            className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-white text-black text-[12px] font-black tracking-[0.14em] uppercase hover:bg-cyan-200 transition-all"
+          >
+            Get Started
+            <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
+          <div className="lg:col-span-5 space-y-10">
+            <div className="space-y-5">
+              <h3 className="text-2xl font-medium tracking-tighter flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)]" />
+                Solesphere<span className="text-zinc-500 italic">/AI</span>
+              </h3>
+              <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
+                High-fidelity interview practice for ambitious engineers. Train with voice, feedback, and role-specific intensity that mirrors real hiring loops.
+              </p>
+            </div>
+
+            <button
+              onClick={handleEmailClick}
+              className="group w-full max-w-md rounded-2xl border border-zinc-700/80 bg-zinc-900/50 p-4 transition-all duration-500 hover:border-cyan-400/50 hover:bg-zinc-900"
+            >
+              <span className="flex items-center gap-4">
+                <span className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center transition-colors group-hover:bg-cyan-400">
+                  <Mail size={18} className="text-zinc-300 group-hover:text-black" />
+                </span>
+                <span className="text-left">
+                  <span className="block text-xs font-bold text-white">Send a Message</span>
+                  <span className="block text-[11px] text-zinc-500">tejas@solesphere.ai</span>
+                </span>
+                <ArrowRight size={16} className="ml-auto text-zinc-600 transition-all group-hover:text-cyan-300 group-hover:translate-x-1" />
+              </span>
+            </button>
+          </div>
+
+          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-10">
+            <div className="space-y-5">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Platform</h4>
+              <ul className="flex flex-col gap-3">
+                {[
+                  { label: 'Simulator', href: '/interview/simulator' },
+                  { label: 'Practice', href: '/practice' },
+                  { label: 'Pricing', href: '#pricing' },
+                  { label: 'Resources', href: '/resources' },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <Link href={item.href} className="text-sm text-zinc-400 hover:text-white transition-colors inline-flex items-center gap-1.5 group">
+                      {item.label}
+                      <ArrowUpRight size={12} className="opacity-0 transition-all group-hover:opacity-100 group-hover:-translate-y-0.5" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-5">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Legal</h4>
+              <ul className="flex flex-col gap-3">
+                {["Privacy Policy", "Terms of Service", "Cookie Settings"].map((item) => (
+                  <li key={item}>
+                    <Link href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{item}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-5 col-span-2 md:col-span-1">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Social</h4>
+              <div className="flex gap-3">
+                {[Github, Linkedin, Twitter].map((Icon, idx) => (
+                  <Link
+                    key={idx}
+                    href="#"
+                    className="group p-3 rounded-xl border border-zinc-800 bg-zinc-900/70 hover:border-cyan-500/35 hover:bg-zinc-800 transition-all"
+                  >
+                    <Icon size={16} className="text-zinc-400 group-hover:text-cyan-300 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-20 pt-8 border-t border-zinc-900/90 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4 text-[11px] font-medium text-zinc-600">
+            <span>© {currentYear} SOLESPHERE</span>
+            <span className="w-1 h-1 rounded-full bg-zinc-800" />
+            <span>HQ / NEW DELHI, IN</span>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5">
+            <Globe size={12} className="text-zinc-500" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.18em]">Global English</span>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -516,6 +781,8 @@ export default function LandingPage() {
           <Features />
         </div>
       </div>
+      <Footer />
     </>
   );
 }
+
