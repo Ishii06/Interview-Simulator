@@ -286,7 +286,7 @@ export default function CodingSheetPage() {
           <p className="mb-2 text-xs uppercase tracking-[0.3em] text-indigo-300/80">Coding Practice</p>
           <h1 className="text-2xl font-black md:text-3xl">DSA Cheat Sheet</h1>
           <p className="mx-auto mt-2 max-w-3xl text-sm text-white/65">
-            Ace the coding interview with a compact checklist. Mark each problem as done and track your progress on the right.
+            Ace the coding interview with 75 Questions. Mark each problem as done and track your progress on the right.
           </p>
         </div>
 
