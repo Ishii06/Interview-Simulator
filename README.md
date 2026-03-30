@@ -57,32 +57,6 @@ The app is designed to help users practice mock interviews, take aptitude tests,
 - Supabase Auth
 - Row-level security policies for service-role access
 
-## Project Structure
-
-```text
-InterviewAI/
-├─ frontend/
-│  ├─ app/
-│  │  ├─ interview/
-│  │  ├─ practice/
-│  │  ├─ profile/
-│  │  ├─ login/
-│  │  ├─ signup/
-│  │  ├─ resources/
-│  │  └─ components/
-│  └─ store/
-├─ backend/
-│  ├─ controllers/
-│  ├─ routes/
-│  ├─ middleware/
-│  ├─ services/
-│  └─ supabase/
-└─ ai-python/
-	├─ app/
-	├─ audio/
-	├─ models/
-	└─ voices/
-```
 
 ## How It Works
 
@@ -180,33 +154,3 @@ uvicorn app.main:app --reload --port 8000
 ### Python Service
 
 - `GEMINI_API_KEY` - API key used to generate interview questions and explanations
-
-## Main API Flow
-
-- `POST /api/auth/login` - Logs in a user and sets the session cookie.
-- `GET /api/auth/me` - Returns the current authenticated user.
-- `POST /api/interview/question` - Generates the next interview question.
-- `POST /api/interview/transcribe` - Converts interview audio to text.
-- `POST /api/interview/evaluate` - Evaluates an interview session.
-- `POST /api/tests/create` - Creates a practice test and generates questions.
-- `GET /api/tests/history` - Returns practice test history for the profile page.
-- `GET /api/questions/:test_id` - Returns questions for a saved practice test.
-- `POST /api/results/submit` - Scores a practice test submission.
-
-## Highlights
-
-- The profile page shows the user name in a distinctive type style, email below it, rhythm stats, the shared coding tracker, and full history panels.
-- Coding progress is shared between the coding page and profile tracker through a single persistent state key.
-- Practice tests reuse generated questions immediately, reducing unnecessary refetches.
-- The backend normalizes AI output before persisting it, which prevents malformed AI responses from breaking the flow.
-
-## Useful Notes
-
-- The backend expects Supabase to be configured with service-role access.
-- The Python service must be running for interview generation and aptitude test generation.
-- Cookie-based auth is used, so the frontend requests must include credentials.
-
-## License
-
-No license has been specified yet.
-
