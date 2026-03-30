@@ -1,6 +1,45 @@
 import axios from "axios"
 import { supabase } from "../config/supabaseClient.js"
 
+const normalizeSection = (section) => {
+  const value = String(section ?? "").trim().toLowerCase()
+
+  if (value === "verbal" || value === "logical" || value === "numerical") {
+    return value
+  }
+
+  return "verbal"
+}
+
+const normalizeOptions = (options) => {
+  if (!Array.isArray(options)) {
+    return []
+  }
+
+  return options
+    .map((option) => String(option ?? "").trim())
+    .filter(Boolean)
+}
+
+const normalizeQuestion = (question, fallbackDifficulty) => {
+  const questionText = String(question?.question ?? "").trim()
+
+  if (!questionText) {
+    return null
+  }
+
+  const options = normalizeOptions(question?.options)
+  const correctAnswer = String(question?.correct_answer ?? "").trim() || options[0] || ""
+  const difficulty = String(question?.difficulty ?? fallbackDifficulty ?? "").trim() || fallbackDifficulty
+
+  return {
+    section: normalizeSection(question?.section),
+    question: questionText,
+    options,
+    correct_answer: correctAnswer,
+  }
+}
+
 export const createTest = async (req, res) => {
   try {
     const { role, experience, difficulty } = req.body
@@ -29,6 +68,16 @@ export const createTest = async (req, res) => {
       })
     }
 
+    const formattedQuestions = questions
+      .map((question) => normalizeQuestion(question, difficulty))
+      .filter(Boolean)
+
+    if (formattedQuestions.length === 0) {
+      return res.status(502).json({
+        error: "AI service returned questions that could not be normalized",
+      })
+    }
+
     // 🔥 Always use UTC ISO strings
     const startTime = new Date()
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000)
@@ -51,22 +100,23 @@ export const createTest = async (req, res) => {
       .select()
       .single()
 
-    if (testError) throw testError
+    if (testError) {
+      throw new Error(testError.message || "Failed to create test")
+    }
 
     // Attach test_id to every generated question and return inserted rows.
-    const formattedQuestions = questions.map((q) => ({
-      ...q,
-      difficulty: q.difficulty ?? difficulty,
-      test_id: testData.id
+    const questionsToInsert = formattedQuestions.map((question) => ({
+      test_id: testData.id,
+      ...question,
     }))
 
     const { data: insertedQuestions, error: questionError } = await supabase
       .from("questions")
-      .insert(formattedQuestions)
+      .insert(questionsToInsert)
       .select("*")
 
     if (questionError) {
-      throw questionError
+      throw new Error(questionError.message || "Failed to create questions")
     }
 
     res.json({
@@ -86,6 +136,8 @@ export const createTest = async (req, res) => {
       })
     }
 
-    res.status(500).json({ error: error.message })
+    res.status(500).json({
+      error: error.message || "Failed to create test",
+    })
   }
 }

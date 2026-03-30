@@ -9,7 +9,6 @@ export const addQuestions = async (req, res) => {
     question: q.question,
     options: q.options,
     correct_answer: q.correct_answer,
-    difficulty: q.difficulty ?? difficulty ?? "medium"
   }))
 
   const { data, error } = await supabase
