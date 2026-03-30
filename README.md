@@ -8,16 +8,6 @@ InterviewAI is a full-stack interview practice platform with three coordinated s
 
 The app is designed to help users practice mock interviews, take aptitude tests, track coding progress, and review their history in one place.
 
-## Features
-
-- Authentication with Supabase-backed sessions.
-- AI interview question generation.
-- Voice-first interview flow with transcription and evaluation.
-- Aptitude test generation with timed submission and scoring.
-- Shared coding progress tracker with persistent checklist state.
-- Profile dashboard with rhythm stats, interview history, and practice test history.
-- Resources and practice pages for guided preparation.
-- Supabase-backed storage for tests, questions, results, and interview history.
 
 ## Tech Stack
 
@@ -57,14 +47,6 @@ The app is designed to help users practice mock interviews, take aptitude tests,
 - Supabase Auth
 - Row-level security policies for service-role access
 
-
-## How It Works
-
-1. The frontend collects user input and calls the backend APIs.
-2. The backend validates the request, reads the authenticated user from the cookie session, and stores data in Supabase.
-3. For AI-powered flows, the backend calls the Python service.
-4. The Python service generates questions, answers, explanations, or audio payloads and returns structured JSON.
-5. The frontend renders the live session, scores, review data, history, and progress state.
 
 ## Setup
 
@@ -154,3 +136,23 @@ uvicorn app.main:app --reload --port 8000
 ### Python Service
 
 - `GEMINI_API_KEY` - API key used to generate interview questions and explanations
+
+
+## Features
+
+- Authentication with Supabase-backed sessions.
+- AI interview question generation.
+- Voice-first interview flow with transcription and evaluation.
+- Aptitude test generation with timed submission and scoring.
+- Shared coding progress tracker with persistent checklist state.
+- Profile dashboard with rhythm stats, interview history, and practice test history.
+- Resources and practice pages for guided preparation.
+- Supabase-backed storage for tests, questions, results, and interview history.
+
+## How It Works
+
+1. The frontend collects user input and calls the backend APIs.
+2. The backend validates the request, reads the authenticated user from the cookie session, and stores data in Supabase.
+3. For AI-powered flows, the backend calls the Python service.
+4. The Python service generates questions, answers, explanations, or audio payloads and returns structured JSON.
+5. The frontend renders the live session, scores, review data, history, and progress state.
