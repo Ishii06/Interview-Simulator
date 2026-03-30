@@ -141,3 +141,62 @@ export const createTest = async (req, res) => {
     })
   }
 }
+
+export const getTestHistory = async (req, res) => {
+  try {
+    const user_id = req.user?.id
+
+    if (!user_id) {
+      return res.status(401).json({ error: "Not authenticated" })
+    }
+
+    const { data: tests, error: testError } = await supabase
+      .from("tests")
+      .select("id, user_id, role, experience, difficulty, start_time, end_time, is_submitted, created_at")
+      .eq("user_id", user_id)
+      .order("created_at", { ascending: false })
+      .limit(50)
+
+    if (testError) {
+      return res.status(500).json({ error: testError.message })
+    }
+
+    const testIds = (tests || []).map((test) => test.id)
+
+    let resultsByTestId = {}
+
+    if (testIds.length > 0) {
+      const { data: results, error: resultError } = await supabase
+        .from("results")
+        .select("test_id, score, total, percentage, created_at")
+        .in("test_id", testIds)
+        .order("created_at", { ascending: false })
+
+      if (resultError) {
+        return res.status(500).json({ error: resultError.message })
+      }
+
+      resultsByTestId = (results || []).reduce((accumulator, result) => {
+        if (!accumulator[result.test_id]) {
+          accumulator[result.test_id] = result
+        }
+
+        return accumulator
+      }, {})
+    }
+
+    const history = (tests || []).map((test) => {
+      const latestResult = resultsByTestId[test.id]
+
+      return {
+        ...test,
+        result: latestResult || null,
+        attempt_label: test.is_submitted ? "Completed" : "In progress",
+      }
+    })
+
+    return res.json({ history })
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Failed to fetch test history" })
+  }
+}

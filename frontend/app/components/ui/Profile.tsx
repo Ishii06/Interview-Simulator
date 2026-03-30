@@ -2,9 +2,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarDays, Flame, IdCard, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, Flame, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "../../store/authStore";
+import CodingProgressPanel from "./CodingProgressPanel";
 
 type InterviewHistoryItem = {
 	id: number | string;
@@ -14,7 +15,23 @@ type InterviewHistoryItem = {
 	created_at?: string;
 };
 
-const API_BASE_URL = "http://localhost:5000/api/interviews";
+type PracticeHistoryItem = {
+	id: number | string;
+	role?: string;
+	experience?: string;
+	difficulty?: string;
+	created_at?: string;
+	is_submitted?: boolean;
+	result?: {
+		score?: number;
+		total?: number;
+		percentage?: number;
+	};
+	attempt_label?: string;
+};
+
+const INTERVIEW_API = "http://localhost:5000/api/interviews/history";
+const PRACTICE_API = "http://localhost:5000/api/tests/history";
 
 const titleCase = (value: string) =>
 	value
@@ -73,9 +90,16 @@ const getConsistency = (dates: string[]) => {
 	return Math.round((activeDays / 30) * 100);
 };
 
+const formatPracticeTitle = (item: PracticeHistoryItem) => {
+	const role = item.role ? titleCase(item.role) : "Practice Test";
+	const difficulty = item.difficulty ? titleCase(item.difficulty) : "Medium";
+	return `${role} · ${difficulty}`;
+};
+
 export default function Profile() {
 	const { user, initialized, fetchCurrentUser } = useAuthStore();
-	const [history, setHistory] = useState<InterviewHistoryItem[]>([]);
+	const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryItem[]>([]);
+	const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryItem[]>([]);
 	const [loadingHistory, setLoadingHistory] = useState(true);
 
 	useEffect(() => {
@@ -88,20 +112,27 @@ export default function Profile() {
 		const loadHistory = async () => {
 			setLoadingHistory(true);
 			try {
-				const response = await fetch(API_BASE_URL + "/history", {
-					method: "GET",
-					credentials: "include",
-				});
+				const [interviewResponse, practiceResponse] = await Promise.all([
+					fetch(INTERVIEW_API, { method: "GET", credentials: "include" }),
+					fetch(PRACTICE_API, { method: "GET", credentials: "include" }),
+				]);
 
-				if (!response.ok) {
-					setHistory([]);
-					return;
+				if (interviewResponse.ok) {
+					const interviewData = await interviewResponse.json();
+					setInterviewHistory(Array.isArray(interviewData?.history) ? interviewData.history : []);
+				} else {
+					setInterviewHistory([]);
 				}
 
-				const data = await response.json();
-				setHistory(Array.isArray(data?.history) ? data.history : []);
+				if (practiceResponse.ok) {
+					const practiceData = await practiceResponse.json();
+					setPracticeHistory(Array.isArray(practiceData?.history) ? practiceData.history : []);
+				} else {
+					setPracticeHistory([]);
+				}
 			} catch {
-				setHistory([]);
+				setInterviewHistory([]);
+				setPracticeHistory([]);
 			} finally {
 				setLoadingHistory(false);
 			}
@@ -128,18 +159,26 @@ export default function Profile() {
 	}, [user]);
 
 	const stats = useMemo(() => {
-		const dates = history
+		const interviewDates = interviewHistory
 			.map((item) => (item.created_at ? toDateKey(item.created_at) : null))
 			.filter((item): item is string => Boolean(item));
 
-		return {
-			streak: getCurrentStreak(dates),
-			consistency: getConsistency(dates),
-			sessions: history.length,
-		};
-	}, [history]);
+		const practiceDates = practiceHistory
+			.map((item) => (item.created_at ? toDateKey(item.created_at) : null))
+			.filter((item): item is string => Boolean(item));
 
-	const recentInterviews = history.slice(0, 3);
+		const allDates = [...interviewDates, ...practiceDates];
+
+		return {
+			streak: getCurrentStreak(allDates),
+			consistency: getConsistency(allDates),
+			interviewAttempts: interviewHistory.length,
+			practiceAttempts: practiceHistory.length,
+		};
+	}, [interviewHistory, practiceHistory]);
+
+	const recentInterviews = interviewHistory.slice(0, 3);
+	const recentPractice = practiceHistory.slice(0, 3);
 
 	if (!initialized || (initialized && !user)) {
 		return (
@@ -150,7 +189,7 @@ export default function Profile() {
 						Sign in to view your profile
 					</h1>
 					<p className="mt-4 text-white/60 leading-7">
-						Your profile shows your name, user ID, streak, and consistency stats.
+						Your profile shows your name, rhythm stats, tracker, and history in one place.
 					</p>
 					<Link
 						href="/login"
@@ -165,95 +204,142 @@ export default function Profile() {
 	}
 
 	return (
-		<main className="min-h-screen overflow-x-hidden bg-[#07070a] text-white px-6 py-28">
+		<main className="min-h-screen overflow-x-hidden bg-[#07070a] text-white px-6 py-20 md:py-24">
 			<div className="absolute inset-0 -z-10 opacity-60" style={{
 				backgroundImage: "radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",
 				backgroundSize: "28px 28px",
 			}} />
 			<div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(99,102,241,0.16),transparent_28%)]" />
 
-			<section className="mx-auto max-w-6xl">
+			<section className="mx-auto max-w-7xl">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6 }}
-					className="max-w-3xl"
+					className="max-w-4xl"
 				>
 					<div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-4 py-2 text-[11px] font-semibold tracking-[0.22em] text-white/60 uppercase">
 						<ShieldCheck size={12} />
 						User Profile
 					</div>
-					<h1 className="mt-6 text-[clamp(2.8rem,7vw,5.4rem)] font-black leading-[0.92] tracking-[-0.05em] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+					<h1 className="mt-6 text-[clamp(2.8rem,7vw,5.4rem)] font-black leading-[0.9] tracking-[-0.06em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
 						{derivedName}
 					</h1>
-					<p className="mt-5 max-w-2xl text-base leading-8 text-white/55">
-						Track your interview rhythm, review your consistency, and keep your practice visible in one place.
+					<p className="mt-3 text-sm text-white/55 uppercase tracking-[0.2em]">
+						<Mail size={12} className="inline-block -mt-0.5 mr-2" />
+						{user?.email || "N/A"}
 					</p>
 				</motion.div>
 
-				<div className="mt-10 grid gap-5 md:grid-cols-3">
-					<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6" whileHover={{ y: -4 }}>
-						<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><IdCard size={13} /> User ID</div>
-						<p className="mt-4 break-all text-sm text-white/80">{user?.id || "N/A"}</p>
-					</motion.div>
-
-					<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6" whileHover={{ y: -4 }}>
-						<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Flame size={13} /> Streak</div>
-						<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : stats.streak}</p>
-						<p className="mt-2 text-sm text-white/55">consecutive active days</p>
-					</motion.div>
-
-					<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6" whileHover={{ y: -4 }}>
-						<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><CalendarDays size={13} /> Consistency</div>
-						<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : `${stats.consistency}%`}</p>
-						<p className="mt-2 text-sm text-white/55">active days in the last 30</p>
-					</motion.div>
+				<div className="mt-10 flex flex-wrap items-center gap-3 text-white/45">
+					<Flame size={16} className="text-orange-300" />
+					<span className="text-xs uppercase tracking-[0.26em]">Track your interview rhythm</span>
 				</div>
 
-				<div className="mt-5 grid gap-5 md:grid-cols-2">
-					<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6" whileHover={{ y: -4 }}>
-						<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Mail size={13} /> Email</div>
-						<p className="mt-4 text-sm text-white/80">{user?.email || "N/A"}</p>
-					</motion.div>
+				<div className="mt-6 grid gap-6 xl:grid-cols-[6fr_4fr] items-stretch">
+					<div className="grid gap-5 md:grid-cols-2">
+						<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6 min-h-37.5" whileHover={{ y: -4 }}>
+							<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Flame size={13} /> Streak</div>
+							<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : stats.streak}</p>
+							<p className="mt-2 text-sm text-white/55">consecutive active days</p>
+						</motion.div>
 
-					<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6" whileHover={{ y: -4 }}>
-						<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Sparkles size={13} /> Practice Sessions</div>
-						<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : stats.sessions}</p>
-						<p className="mt-2 text-sm text-white/55">total interview sessions recorded</p>
-					</motion.div>
+						<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6 min-h-37.5" whileHover={{ y: -4 }}>
+							<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><CalendarDays size={13} /> Consistency</div>
+							<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : `${stats.consistency}%`}</p>
+							<p className="mt-2 text-sm text-white/55">active days in the last 30</p>
+						</motion.div>
+
+						<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6 min-h-37.5" whileHover={{ y: -4 }}>
+							<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Sparkles size={13} /> Interview Attempts</div>
+							<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : stats.interviewAttempts}</p>
+							<p className="mt-2 text-sm text-white/55">total interview sessions recorded</p>
+						</motion.div>
+
+						<motion.div className="rounded-3xl border border-white/8 bg-white/3 p-6 min-h-37.5" whileHover={{ y: -4 }}>
+							<div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.2em]"><Sparkles size={13} /> Practice Test Attempts</div>
+							<p className="mt-4 text-4xl font-black">{loadingHistory ? "--" : stats.practiceAttempts}</p>
+							<p className="mt-2 text-sm text-white/55">aptitude tests completed or started</p>
+						</motion.div>
+					</div>
+
+					<div className="h-full min-h-155">
+						<CodingProgressPanel />
+					</div>
 				</div>
 
 				<div className="mt-10 rounded-3xl border border-white/8 bg-white/3 p-6">
 					<div className="flex items-center justify-between gap-4">
 						<div>
-							<p className="text-xs uppercase tracking-[0.22em] text-white/35">Recent activity</p>
-							<h2 className="mt-2 text-xl font-bold">Latest interviews</h2>
+							<p className="text-xs uppercase tracking-[0.22em] text-white/35">History</p>
+							<h2 className="mt-2 text-xl font-bold">Interview and practice history</h2>
 						</div>
 						<Link href="/practice" className="text-sm text-cyan-200 hover:text-white transition inline-flex items-center gap-1.5">
 							Go to practice <ArrowRight size={14} />
 						</Link>
 					</div>
 
-					<div className="mt-5 grid gap-3">
-						{loadingHistory ? (
-							<p className="text-sm text-white/50">Loading history...</p>
-						) : recentInterviews.length > 0 ? (
-							recentInterviews.map((item) => (
-								<div key={item.id} className="rounded-2xl border border-white/6 bg-black/15 px-4 py-4">
-									<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-										<div>
-											<p className="font-semibold text-white">{item.role || "Interview"}</p>
-											<p className="text-sm text-white/50">{item.level || "beginner"} · {item.status || "active"}</p>
+					<div className="mt-6 grid gap-8 xl:grid-cols-2">
+						<div>
+							<div className="flex items-center justify-between gap-3 mb-4">
+								<h3 className="text-lg font-semibold">Interview History</h3>
+								<span className="text-xs uppercase tracking-[0.2em] text-white/35">{recentInterviews.length} items</span>
+							</div>
+							<div className="space-y-3">
+								{loadingHistory ? (
+									<p className="text-sm text-white/50">Loading history...</p>
+								) : recentInterviews.length > 0 ? (
+									recentInterviews.map((item) => (
+										<div key={item.id} className="rounded-2xl border border-white/6 bg-black/15 px-4 py-4">
+											<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+												<div>
+													<p className="font-semibold text-white">{item.role || "Interview"}</p>
+													<p className="text-sm text-white/50">{item.level || "beginner"} · {item.status || "active"}</p>
+												</div>
+												<p className="text-xs uppercase tracking-[0.2em] text-white/35">
+													{item.created_at ? new Date(item.created_at).toLocaleDateString() : "Unknown date"}
+												</p>
+											</div>
 										</div>
-										<p className="text-xs uppercase tracking-[0.2em] text-white/35">
-											{item.created_at ? new Date(item.created_at).toLocaleDateString() : "Unknown date"}
-										</p>
-									</div>
-								</div>
-							))
-						) : (
-							<p className="text-sm text-white/50">No interview sessions yet. Start a practice round to build your streak.</p>
-						)}
+									))
+								) : (
+									<p className="text-sm text-white/50">No interview sessions yet.</p>
+								)}
+							</div>
+						</div>
+
+						<div>
+							<div className="flex items-center justify-between gap-3 mb-4">
+								<h3 className="text-lg font-semibold">Practice Test History</h3>
+								<span className="text-xs uppercase tracking-[0.2em] text-white/35">{recentPractice.length} items</span>
+							</div>
+							<div className="space-y-3">
+								{loadingHistory ? (
+									<p className="text-sm text-white/50">Loading history...</p>
+								) : recentPractice.length > 0 ? (
+									recentPractice.map((item) => (
+										<div key={item.id} className="rounded-2xl border border-white/6 bg-black/15 px-4 py-4">
+											<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+												<div>
+													<p className="font-semibold text-white">{formatPracticeTitle(item)}</p>
+													<p className="text-sm text-white/50">{item.attempt_label || (item.is_submitted ? "Completed" : "In progress")}</p>
+												</div>
+												<p className="text-xs uppercase tracking-[0.2em] text-white/35">
+													{item.created_at ? new Date(item.created_at).toLocaleDateString() : "Unknown date"}
+												</p>
+											</div>
+											{item.result && (
+												<p className="mt-2 text-sm text-white/55">
+													Score {item.result.score ?? 0}/{item.result.total ?? 0} · {(item.result.percentage ?? 0).toFixed(0)}%
+												</p>
+											)}
+										</div>
+									))
+								) : (
+									<p className="text-sm text-white/50">No practice test sessions yet.</p>
+								)}
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>
