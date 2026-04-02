@@ -70,7 +70,7 @@ The app is designed to help users practice mock interviews, take aptitude tests,
 ### 1) Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Ishii06/Interview-Simulator.git
 cd InterviewAI
 ```
 
@@ -133,20 +133,6 @@ Run the Python service:
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
-
-## Environment Variables
-
-### Backend
-
-- `PORT` - Express server port, usually `5000`
-- `SUPABASE_URL` - Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key used for protected server writes
-- `NODE_ENV` - Enables production cookie behavior when set to `production`
-
-### Python Service
-
-- `GEMINI_API_KEY` - API key used to generate interview questions and explanations
-
 
 ## ✨ Features
 
