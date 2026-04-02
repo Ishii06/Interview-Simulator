@@ -102,9 +102,17 @@ export const generateQuestion = async (req, res) => {
       }
     }
 
+    const audioUrl = data?.audioUrl
+      ? `http://localhost:8000${data.audioUrl}`
+      : null;
+    const lipSyncUrl = data?.lipSyncUrl
+      ? `http://localhost:8000${data.lipSyncUrl}`
+      : null;
+
     res.json({
       questionText,
-      audioUrl: `http://localhost:8000${data.audioUrl}`,
+      audioUrl,
+      lipSyncUrl,
       interviewId: activeInterviewId,
     });
   } catch (err) {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Loader2, Mic, Send, Square } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import InterviewAvatar from "@/app/components/ui/InterviewAvatar";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -42,6 +43,7 @@ export default function InterviewSimulatorPage() {
 	const [messages, setMessages] = useState<ConversationMessage[]>([]);
 	const [questionText, setQuestionText] = useState("");
 	const [questionAudioUrl, setQuestionAudioUrl] = useState<string | null>(null);
+	const [questionLipSyncUrl, setQuestionLipSyncUrl] = useState<string | null>(null);
 	const [latestTranscript, setLatestTranscript] = useState("");
 	const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
 
@@ -97,6 +99,7 @@ export default function InterviewSimulatorPage() {
 
 			const nextQuestionText = (data?.questionText || "").trim();
 			const nextAudioUrl = data?.audioUrl || null;
+			const nextLipSyncUrl = data?.lipSyncUrl || null;
 			const nextInterviewId = data?.interviewId || payloadInterviewId;
 
 			if (!nextQuestionText) {
@@ -109,6 +112,7 @@ export default function InterviewSimulatorPage() {
 
 			setQuestionText(nextQuestionText);
 			setQuestionAudioUrl(nextAudioUrl);
+			setQuestionLipSyncUrl(nextLipSyncUrl);
 			appendMessage({ role: "assistant", content: nextQuestionText });
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Unexpected error";
@@ -123,6 +127,7 @@ export default function InterviewSimulatorPage() {
 		setLatestTranscript("");
 		setEvaluation(null);
 		setQuestionAudioUrl(null);
+		setQuestionLipSyncUrl(null);
 		setInterviewId(null);
 		await generateQuestion();
 	};
@@ -322,6 +327,14 @@ export default function InterviewSimulatorPage() {
 
 				<div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
 					<h2 className="mb-4 text-xl font-semibold">Current Question</h2>
+					<InterviewAvatar
+						modelPath="/avatar/rpm-avatar.glb"
+						audioRef={questionAudioRef}
+						lipSyncUrl={questionLipSyncUrl}
+					/>
+					<p className="mt-3 text-xs text-zinc-500">
+						Avatar source: Ready Player Me GLB. Place your file at /public/avatar/rpm-avatar.glb.
+					</p>
 					<p className="min-h-20 whitespace-pre-wrap text-zinc-200">
 						{questionText || "Your first interview question will appear here."}
 					</p>

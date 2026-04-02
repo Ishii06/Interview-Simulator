@@ -1,4 +1,5 @@
 from fastapi import FastAPI,APIRouter, UploadFile, File ,HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
@@ -7,12 +8,12 @@ import uuid
 import os
 import json
 import wave
+import subprocess
 from google import genai
 from dotenv import load_dotenv
 import whisper
 import tempfile
 import shutil
-import json
 import re
 
 load_dotenv()
@@ -21,9 +22,22 @@ load_dotenv()
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model = whisper.load_model("base") 
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+RHUBARB_BINARY = os.getenv("RHUBARB_BINARY", "rhubarb")
 
 
 VOICE_PATH = "voices/en_GB-northern_english_male-medium.onnx"
@@ -231,8 +245,11 @@ def generate_tts(data: dict):
     with wave.open(file_path, "wb") as wav_file:
         voice.synthesize_wav(text, wav_file,syn_config=syn_config)
 
+    lip_sync_url = generate_lip_sync_json(file_path)
+
     return {
-        "audio_url": f"/audio/{file_name}"
+        "audio_url": f"/audio/{file_name}",
+        "lipSyncUrl": lip_sync_url,
     }
 
 @app.post("/generate-question")
@@ -261,9 +278,12 @@ def generate_question(data: dict):
     with wave.open(file_path, "wb") as wav_file:
         voice.synthesize_wav(question_text, wav_file,syn_config=syn_config)
 
+    lip_sync_url = generate_lip_sync_json(file_path)
+
     return {
         "questionText": question_text,
-        "audioUrl": f"/audio/{file_name}"
+        "audioUrl": f"/audio/{file_name}",
+        "lipSyncUrl": lip_sync_url,
     }
 
 @app.post("/speech-to-text")
@@ -287,6 +307,36 @@ def clean_json_response(text: str):
     text = re.sub(r"```json", "", text)
     text = re.sub(r"```", "", text)
     return text.strip()
+
+def generate_lip_sync_json(audio_file_path: str):
+    """
+    Uses Rhubarb to generate mouth cue timings for a wav file.
+    Returns the relative static URL to the generated JSON file, or None on failure.
+    """
+    json_file_path = audio_file_path.rsplit(".", 1)[0] + ".json"
+
+    try:
+        subprocess.run(
+            [
+                RHUBARB_BINARY,
+                "--machineReadable",
+                "-f",
+                "json",
+                "-o",
+                json_file_path,
+                audio_file_path,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return f"/audio/{os.path.basename(json_file_path)}"
+    except FileNotFoundError:
+        print("Rhubarb binary not found. Set RHUBARB_BINARY or add rhubarb to PATH.")
+    except subprocess.CalledProcessError as exc:
+        print("Rhubarb lip-sync generation failed:", exc.stderr)
+
+    return None
 
 @app.post("/evaluate-interview")
 def evaluate_interview(data: dict):
