@@ -1,6 +1,6 @@
-# InterviewAI
+# 🚀 InterviewSimulator
 
-InterviewAI is a full-stack interview practice platform with three coordinated services:
+InterviewSimulator is a full-stack interview practice platform that combines AI, real-time interaction, and progress tracking to simulate real interview experiences. The project consists of three coordinated services:
 
 - A modern Next.js frontend for interview practice, aptitude tests, coding sheets, profile stats, and resources.
 - A Node.js + Express backend that handles authentication, database access, and API orchestration.
@@ -8,54 +8,64 @@ InterviewAI is a full-stack interview practice platform with three coordinated s
 
 The app is designed to help users practice mock interviews, take aptitude tests, track coding progress, and review their history in one place.
 
+---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-### Frontend
+### 🎨 Frontend
 
-- Next.js 16
-- React 19
-- TypeScript
-- Tailwind CSS v4
-- Framer Motion
-- GSAP
-- Zustand
-- Lucide React
+- Next.js 16 → ⚡ Full-stack React framework for fast and SEO-friendly apps  
+- React 19 → 🧩 Component-based UI development  
+- TypeScript → 🔒 Adds type safety and scalability  
+- Tailwind CSS v4 → 🎨 Utility-first styling for rapid UI building  
+- Framer Motion → 🎬 Smooth animations and transitions  
+- GSAP → 🎥 Advanced high-performance animations  
+- Zustand → 🧠 Lightweight global state management  
+- Lucide React → ✨ Clean and customizable icons  
 
-### Backend
+---
 
-- Node.js
-- Express 5
-- Supabase JS client
-- Axios
-- Cookie parser
-- CORS
-- Multer
+### ⚙️ Backend
 
-### AI / Python Service
+- Node.js → 🚀 Server-side JavaScript runtime  
+- Express 5 → 🌐 Minimal framework for building APIs  
+- Supabase JS Client → 🔗 Connects backend with database and auth  
+- Axios → 📡 Handles HTTP requests between services  
+- Cookie Parser → 🍪 Manages cookies for authentication  
+- CORS → 🔐 Enables secure cross-origin requests  
+- Multer → 📁 Handles file uploads (audio, etc.)  
 
-- FastAPI
-- Pydantic
-- Google Gemini API
-- Whisper
-- Piper TTS
-- Uvicorn
+---
 
-### Database / Auth
+### 🤖 AI / Python Service
 
-- Supabase Postgres
-- Supabase Auth
-- Row-level security policies for service-role access
+- FastAPI → ⚡ High-performance API framework for Python  
+- Pydantic → ✅ Data validation and structured schemas  
+- Google Gemini API → 🧠 Generates AI interview questions and explanations  
+- Whisper → 🎙️ Converts speech to text  
+- Piper TTS → 🔊 Converts text to speech  
+- Uvicorn → 🚀 Runs FastAPI efficiently  
 
+---
 
-## Setup
+### 🗄️ Database / Auth
 
-### Prerequisites
+- Supabase Postgres → 🧾 Managed PostgreSQL database  
+- Supabase Auth → 🔐 User authentication and session handling  
+- Row-Level Security → 🛡️ Fine-grained access control  
 
-- Node.js 18+ or 20+
-- Python 3.10+
-- A Supabase project
-- A Gemini API key for the Python service
+---
+
+## ⚙️ Setup
+
+### 📌 Prerequisites
+
+- Node.js 18+ or 20+  
+- Python 3.10+  
+- Supabase project  
+- Gemini API key  
+
+---
 
 ### 1) Clone the repository
 
@@ -138,21 +148,25 @@ uvicorn app.main:app --reload --port 8000
 - `GEMINI_API_KEY` - API key used to generate interview questions and explanations
 
 
-## Features
+## ✨ Features
 
-- Authentication with Supabase-backed sessions.
-- AI interview question generation.
-- Voice-first interview flow with transcription and evaluation.
-- Aptitude test generation with timed submission and scoring.
-- Shared coding progress tracker with persistent checklist state.
-- Profile dashboard with rhythm stats, interview history, and practice test history.
-- Resources and practice pages for guided preparation.
-- Supabase-backed storage for tests, questions, results, and interview history.
+- 🔐 Authentication with Supabase-backed secure sessions  
+- 🤖 AI-powered interview question generation using Gemini  
+- 🎙️ Voice-first interview flow with speech-to-text and evaluation  
+- ⏱️ Timed aptitude tests with automatic scoring  
+- 💻 Coding progress tracker with persistent checklist state  
+- 📊 Profile dashboard with interview history and performance stats  
+- 📚 Curated resources and guided practice pages  
+- ☁️ Supabase-backed storage for tests, results, and user data  
 
-## How It Works
+---
 
-1. The frontend collects user input and calls the backend APIs.
-2. The backend validates the request, reads the authenticated user from the cookie session, and stores data in Supabase.
-3. For AI-powered flows, the backend calls the Python service.
-4. The Python service generates questions, answers, explanations, or audio payloads and returns structured JSON.
-5. The frontend renders the live session, scores, review data, history, and progress state.
+## 🔄 How It Works
+
+1. 🧑‍💻 The frontend collects user input (answers, audio, test actions)  
+2. ⚙️ The backend authenticates the user and validates requests  
+3. 🗄️ Backend reads/writes data to Supabase (tests, results, history)  
+4. 🤖 For AI features, backend calls the FastAPI Python service  
+5. 🧠 Python service generates questions, answers, audio, and explanations  
+6. 📡 Structured JSON is returned back to the backend  
+7. 🎨 Frontend renders live sessions, scores, and analytics
