@@ -628,16 +628,32 @@ function Features() {
   );
 }
 
-import { Mail, ArrowRight, Github, Linkedin, Twitter, Globe } from 'lucide-react';
+import { Mail, ArrowRight, Github, Linkedin, Globe, ChevronDown } from 'lucide-react';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
+  const [openSocialMenu, setOpenSocialMenu] = useState<'github' | 'linkedin' | null>(null);
 
-  const handleEmailClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const email = "tejas@solesphere.ai";
-    window.location.href = `mailto:${email}?subject=Inquiry from Solesphere`;
-  };
+  const socialButtons = [
+    {
+      id: 'github',
+      label: 'GitHub',
+      Icon: Github,
+      links: [
+        { label: 'TejasBhalla', href: 'https://github.com/TejasBhalla/Interview-Simulator' },
+        { label: 'Ishii06', href: 'https://github.com/Ishii06/Interview-Simulator' },
+      ],
+    },
+    {
+      id: 'linkedin',
+      label: 'LinkedIn',
+      Icon: Linkedin,
+      links: [
+        { label: 'Tejas Bhalla', href: 'https://www.linkedin.com/in/tejas-bhalla-70aba9358/' },
+        { label: 'Ishita', href: 'https://www.linkedin.com/in/ishita-gupta12/' },
+      ],
+    },
+  ] as const;
 
   return (
     <footer className="relative overflow-hidden border-t border-cyan-500/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.05),transparent_45%),linear-gradient(180deg,#050507_0%,#0a0a10_35%,#07070a_100%)] text-white pt-24 pb-12">
@@ -666,16 +682,18 @@ function Footer() {
             <div className="space-y-5">
               <h3 className="text-2xl font-medium tracking-tighter flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)]" />
-                Solesphere<span className="text-zinc-500 italic">/AI</span>
+                Interview<span className="text-zinc-500">Simulator</span>
               </h3>
               <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
                 High-fidelity interview practice for ambitious engineers. Train with voice, feedback, and role-specific intensity that mirrors real hiring loops.
               </p>
             </div>
 
-            <button
-              onClick={handleEmailClick}
-              className="group w-full max-w-md rounded-2xl border border-zinc-700/80 bg-zinc-900/50 p-4 transition-all duration-500 hover:border-cyan-400/50 hover:bg-zinc-900"
+            <a
+              href="https://mail.google.com/mail/?view=cm&fs=1&to=tejasbhalla07@gmail.com&su=Inquiry%20about%20Interview%20Simulator&body=Hi%20Tejas%2C%0A%0AI%20wanted%20to%20reach%20out%20about%20Interview%20Simulator.%0A"
+              target="_blank"
+              rel="noreferrer"
+              className="group block w-full max-w-md rounded-2xl border border-zinc-700/80 bg-zinc-900/50 p-4 transition-all duration-500 hover:border-cyan-400/50 hover:bg-zinc-900"
             >
               <span className="flex items-center gap-4">
                 <span className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center transition-colors group-hover:bg-cyan-400">
@@ -683,11 +701,11 @@ function Footer() {
                 </span>
                 <span className="text-left">
                   <span className="block text-xs font-bold text-white">Send a Message</span>
-                  <span className="block text-[11px] text-zinc-500">tejas@solesphere.ai</span>
+                  <span className="block text-[11px] text-zinc-500">tejasbhalla07@gmail.com</span>
                 </span>
                 <ArrowRight size={16} className="ml-auto text-zinc-600 transition-all group-hover:text-cyan-300 group-hover:translate-x-1" />
               </span>
-            </button>
+            </a>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-10">
@@ -713,9 +731,13 @@ function Footer() {
             <div className="space-y-5">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Legal</h4>
               <ul className="flex flex-col gap-3">
-                {["Privacy Policy", "Terms of Service", "Cookie Settings"].map((item) => (
-                  <li key={item}>
-                    <Link href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{item}</Link>
+                {[
+                  { label: "Privacy Policy", href: "/privacy-policy" },
+                  { label: "Terms of Service", href: "/terms-of-service" },
+                  { label: "Cookie Settings", href: "/cookie-settings" },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <Link href={item.href} className="text-sm text-zinc-400 hover:text-white transition-colors">{item.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -723,15 +745,45 @@ function Footer() {
 
             <div className="space-y-5 col-span-2 md:col-span-1">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Social</h4>
-              <div className="flex gap-3">
-                {[Github, Linkedin, Twitter].map((Icon, idx) => (
-                  <Link
-                    key={idx}
-                    href="#"
-                    className="group p-3 rounded-xl border border-zinc-800 bg-zinc-900/70 hover:border-cyan-500/35 hover:bg-zinc-800 transition-all"
-                  >
-                    <Icon size={16} className="text-zinc-400 group-hover:text-cyan-300 transition-colors" />
-                  </Link>
+              <div className="flex flex-col gap-3">
+                {socialButtons.map(({ id, label, Icon, links }) => (
+                  <div key={id} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenSocialMenu(openSocialMenu === id ? null : id)}
+                      className="group flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-left transition-all hover:border-cyan-500/35 hover:bg-zinc-800"
+                      aria-expanded={openSocialMenu === id}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950/80">
+                          <Icon size={16} className="text-zinc-400 transition-colors group-hover:text-cyan-300" />
+                        </span>
+                        <span className="text-sm font-medium text-zinc-200">{label}</span>
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        className={`text-zinc-500 transition-transform duration-200 ${openSocialMenu === id ? 'rotate-180 text-cyan-300' : ''}`}
+                      />
+                    </button>
+
+                    {openSocialMenu === id && (
+                      <div className="absolute left-0 top-[calc(100%+0.5rem)] z-20 w-full rounded-2xl border border-zinc-800 bg-zinc-950/95 p-2 shadow-2xl shadow-black/30 backdrop-blur-md">
+                        {links.map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition"
+                            onClick={() => setOpenSocialMenu(null)}
+                          >
+                            <span>{item.label}</span>
+                            <ChevronRight size={14} className="text-zinc-500" />
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -740,9 +792,8 @@ function Footer() {
 
         <div className="mt-20 pt-8 border-t border-zinc-900/90 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4 text-[11px] font-medium text-zinc-600">
-            <span>© {currentYear} SOLESPHERE</span>
-            <span className="w-1 h-1 rounded-full bg-zinc-800" />
-            <span>HQ / NEW DELHI, IN</span>
+            <span>COPYRIGHT©{currentYear}INTERVIEW SIMULATOR</span>
+            
           </div>
 
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5">

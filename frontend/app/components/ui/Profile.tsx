@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarDays, Flame, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { getInterviewHistory } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import CodingProgressPanel from "./CodingProgressPanel";
 
@@ -30,7 +31,6 @@ type PracticeHistoryItem = {
 	attempt_label?: string;
 };
 
-const INTERVIEW_API = "http://localhost:5000/api/interviews/history";
 const PRACTICE_API = "http://localhost:5000/api/tests/history";
 
 const titleCase = (value: string) =>
@@ -101,6 +101,7 @@ export default function Profile() {
 	const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryItem[]>([]);
 	const [practiceHistory, setPracticeHistory] = useState<PracticeHistoryItem[]>([]);
 	const [loadingHistory, setLoadingHistory] = useState(true);
+	const [historyError, setHistoryError] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!initialized) {
@@ -111,18 +112,14 @@ export default function Profile() {
 	useEffect(() => {
 		const loadHistory = async () => {
 			setLoadingHistory(true);
+			setHistoryError(null);
 			try {
-				const [interviewResponse, practiceResponse] = await Promise.all([
-					fetch(INTERVIEW_API, { method: "GET", credentials: "include" }),
+				const [interviewData, practiceResponse] = await Promise.all([
+					getInterviewHistory(),
 					fetch(PRACTICE_API, { method: "GET", credentials: "include" }),
 				]);
 
-				if (interviewResponse.ok) {
-					const interviewData = await interviewResponse.json();
-					setInterviewHistory(Array.isArray(interviewData?.history) ? interviewData.history : []);
-				} else {
-					setInterviewHistory([]);
-				}
+				setInterviewHistory(Array.isArray(interviewData?.history) ? interviewData.history : []);
 
 				if (practiceResponse.ok) {
 					const practiceData = await practiceResponse.json();
@@ -130,7 +127,9 @@ export default function Profile() {
 				} else {
 					setPracticeHistory([]);
 				}
-			} catch {
+			} catch (err) {
+				const message = err instanceof Error ? err.message : "Failed to fetch history";
+				setHistoryError(message);
 				setInterviewHistory([]);
 				setPracticeHistory([]);
 			} finally {
@@ -305,6 +304,7 @@ export default function Profile() {
 								) : (
 									<p className="text-sm text-white/50">No interview sessions yet.</p>
 								)}
+								{historyError && <p className="text-sm text-red-300">{historyError}</p>}
 							</div>
 						</div>
 

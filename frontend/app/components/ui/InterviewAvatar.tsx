@@ -220,7 +220,7 @@ export default function InterviewAvatar({ modelPath, audioRef, lipSyncUrl }: Int
             <Canvas
               key={canvasKey}
               dpr={[1, 1.5]}
-              camera={{ position: [0, 1.45, 2.3], fov: 32 }}
+              camera={{ position: [0, 1.55, 2.3], fov: 34 }}
               gl={{ antialias: true, powerPreference: "high-performance" }}
               onCreated={handleCanvasCreated}
             >
@@ -230,7 +230,14 @@ export default function InterviewAvatar({ modelPath, audioRef, lipSyncUrl }: Int
 
               <AvatarModel modelPath={modelPath} audioRef={audioRef} mouthCues={mouthCues} />
               <Environment preset="city" />
-              <OrbitControls enablePan={false} enableZoom={false} minPolarAngle={0.9} maxPolarAngle={1.7} />
+              <OrbitControls
+                enablePan={false}
+                enableZoom={false}
+                enableRotate={false}
+                target={[0, 0.1, 0]}
+                minPolarAngle={1.5}
+                maxPolarAngle={1.7}
+              />
             </Canvas>
           </Suspense>
         )}
@@ -239,4 +246,4 @@ export default function InterviewAvatar({ modelPath, audioRef, lipSyncUrl }: Int
   );
 }
 
-useGLTF.preload("/avatar/rpm-avatar.glb");
+useGLTF.preload("/avatar/zhenja.glb");

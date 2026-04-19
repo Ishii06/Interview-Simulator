@@ -273,7 +273,7 @@ export default function InterviewSimulatorPage() {
 	}, [questionAudioUrl]);
 
 	return (
-		<div className="min-h-screen bg-[#09090b] px-4 py-10 text-zinc-100 md:px-8">
+		<div className="min-h-screen bg-[#09090b] px-4 py-10 text-zinc-100 md:px-8 mt-12">
 			<div className="mx-auto max-w-5xl space-y-6">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
@@ -328,12 +328,12 @@ export default function InterviewSimulatorPage() {
 				<div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
 					<h2 className="mb-4 text-xl font-semibold">Current Question</h2>
 					<InterviewAvatar
-						modelPath="/avatar/rpm-avatar.glb"
+						modelPath="/avatar/zhenja.glb"
 						audioRef={questionAudioRef}
 						lipSyncUrl={questionLipSyncUrl}
 					/>
 					<p className="mt-3 text-xs text-zinc-500">
-						Avatar source: Ready Player Me GLB. Place your file at /public/avatar/rpm-avatar.glb.
+						
 					</p>
 					<p className="min-h-20 whitespace-pre-wrap text-zinc-200">
 						{questionText || "Your first interview question will appear here."}

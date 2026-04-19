@@ -122,7 +122,7 @@ export default function SignupPage() {
           </form>
 
           <p className="text-[10px] text-center text-zinc-600 mt-6 leading-relaxed">
-            By signing up, you agree to our <span className="text-zinc-400 underline">Terms of Service</span> and <span className="text-zinc-400 underline">Privacy Policy</span>.
+            By signing up, you agree to our <Link href="/terms-of-service" className="text-zinc-400 underline">Terms of Service</Link> and <Link href="/privacy-policy" className="text-zinc-400 underline">Privacy Policy</Link>.
           </p>
         </div>
 

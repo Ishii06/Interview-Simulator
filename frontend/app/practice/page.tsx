@@ -113,7 +113,7 @@ export default function PracticePage() {
               <p className="text-sm text-amber-300">Please log in to start a test.</p>
               <button
                 onClick={() => router.push("/login")}
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold"
+                className="px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-100 text-sm font-semibold border border-zinc-500/40 transition-colors"
               >
                 Go to Login
               </button>

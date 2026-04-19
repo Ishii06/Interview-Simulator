@@ -141,7 +141,7 @@ uvicorn app.main:app --reload --port 8000
 - 🎙️ Voice-first interview flow with speech-to-text and evaluation  
 - ⏱️ Timed aptitude tests with automatic scoring  
 - 💻 Coding progress tracker with persistent checklist state  
-- 📊 Profile dashboard with interview history and performance stats  
+- 📊 Profile dashboard with history and performance stats  
 - 📚 Curated resources and guided practice pages  
 - ☁️ Supabase-backed storage for tests, results, and user data  
 
